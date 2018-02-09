@@ -3,6 +3,9 @@
 
 [General Parameters]
 
+	# Identifier (str)
+	species_name = species1
+
 	# Number of organisms (int)
 	population_size = 2
 
@@ -25,7 +28,7 @@
 
 [Mutation Parameters]
 
-	# Whether organism mutates (bool)
+	# Whether organisms can mutate (bool)
 	can_mutate = False
 
 	# Mutation rate, in bit flips per integer timestep (int, or 'none')

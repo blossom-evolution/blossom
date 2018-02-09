@@ -15,24 +15,26 @@ for org_file in org_files:
     # Initialize temporary dict to store species parameters
     org_dict = {}
 
-    # parameters that must be str
+    # Parameters that must be str
     param_str = ['species_name', 'movement_type', 'food_intake_prescription', 'reproduction_type']
 
-    # parameters that must be int
+    # Parameters that must be int
     param_int = ['population_size', 'dna_length']
 
-    # parameters that must be int or 'none'
+    # Parameters that must be int or 'none'
     param_int_none = ['max_age', 'max_time_without_food', 'max_time_without_water', 'mutation_rate',
                       'food_capacity', 'food_initial', 'food_metabolism', 'food_intake', 
                       'water_capacity', 'water_initial', 'water_metabolism', 'water_intake']
 
-    # parameters that must be bool
+    # Parameters that must be bool
     param_bool = ['can_mutate']
 
     # Load from config file
     config_org = configparser.ConfigParser()
     config_org.read(org_file)
 
+    # Cycle through all parameters in the config file, 
+    # converting them to proper types as specifed above
     for section in config_org.sections():
         for key in config_org[section]:
             temp_param = config_org[section][key]

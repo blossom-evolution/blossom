@@ -4,29 +4,29 @@ Initial Thoughts
 - use parameter file to initialize each run
 
 - what do we want per class? what determines an organism?
-	- split by dimension
+    - split by dimension
 
 1D Class (Int position)
 
 - on a number line
 
 - binary DNA (011010101110)
-	- makes it easier to compare
-	- should this reflect any properties or behavior? 
-		- would make it a lot more interesting
+    - makes it easier to compare
+    - should this reflect any properties or behavior? 
+        - would make it a lot more interesting
 - position (int)
 - age (int / timestep)
 - food
-	- would have to correspond with some way of *obtaining* food, whether from environment or other organisms
-	- would be nice to have an option *not* to have food / water as a state that's taken into consideration
-	- track current food level + total food level
+    - would have to correspond with some way of *obtaining* food, whether from environment or other organisms
+    - would be nice to have an option *not* to have food / water as a state that's taken into consideration
+    - track current food level + total food level
 - water
-	- we could / should be able to combine food + water, probably, just for simplicity
-	- track current water level + total water level
+    - we could / should be able to combine food + water, probably, just for simplicity
+    - track current water level + total water level
 - movement patterns
-	- randomness
-		- potential alternatives to *pure* randomness
-	- fatigue?
+    - randomness
+        - potential alternatives to *pure* randomness
+    - fatigue?
 - reproduction or replication
 - sex?
 

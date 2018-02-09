@@ -1,5 +1,4 @@
 # This is the parameter file for a species of organism.
-####################
 
 [General Parameters]
 

@@ -33,7 +33,7 @@ for org_file in org_files:
     # Parameters that must be int
     param_int = ['population_size', 'dna_length']
 
-    # Parameters that must be int or 'none'
+    # Parameters that must be int or 'None'
     param_int_none = ['max_age', 'max_time_without_food', 'max_time_without_water', 'mutation_rate',
                       'food_capacity', 'food_initial', 'food_metabolism', 'food_intake', 
                       'water_capacity', 'water_initial', 'water_metabolism', 'water_intake']
@@ -55,12 +55,15 @@ for org_file in org_files:
             elif key in param_int:
                 val = int(val)
             elif key in param_int_none:
-                if val != 'none':
+                if val != 'None':
                     val = int(val)
             elif key in param_bool:
                 val = (val == 'True')
             else:
                 raise NameError('Key is not a valid parameter')
+            
+            if val == 'None':
+                val = None
             org_dict[key] = val
 
     org_dict_list.append(org_dict)

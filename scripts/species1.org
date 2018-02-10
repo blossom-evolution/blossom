@@ -2,67 +2,67 @@
 
 [General Parameters]
 
-    # Identifier (str)
-    species_name = species1
+# Identifier (str)
+species_name = species1
 
-    # Number of organisms (int)
-    population_size = 2
+# Number of organisms (int)
+population_size = 2
 
-    # Initial DNA length (int)
-    dna_length = 4
+# Initial DNA length (int)
+dna_length = 4
 
-    # Movement specification (str)
-    movement_type = simple_random
+# Movement specification (str)
+movement_type = simple_random
 
 [Life Parameters]
 
-    # Maximum old age (int, or 'none')
-    max_age = 20
+# Maximum old age (int, or 'none')
+max_age = 20
 
-    # Lifetime without food (int, or 'none')
-    max_time_without_food = 10
+# Lifetime without food (int, or 'none')
+max_time_without_food = 10
 
-    # Lifetime without water (int, or 'none')
-    max_time_without_water = 3
+# Lifetime without water (int, or 'none')
+max_time_without_water = 3
 
 [Mutation Parameters]
 
-    # Whether organisms can mutate (bool)
-    can_mutate = False
+# Whether organisms can mutate (bool)
+can_mutate = False
 
-    # Mutation rate, in bit flips per integer timestep (int, or 'none')
-    mutation_rate = none
+# Mutation rate, in bit flips per integer timestep (int, or 'none')
+mutation_rate = none
 
 [Food and Water Parameters]
 
-    # Food intake method (str, or 'none')
-    food_intake_prescription = none
+# Food intake method (str, or 'none')
+food_intake_prescription = none
 
-    # Food capacity (int, or 'none')
-    food_capacity = 100
+# Food capacity (int, or 'none')
+food_capacity = 100
 
-    # Initial food level (int, or 'none')
-    food_initial = 80
+# Initial food level (int, or 'none')
+food_initial = 80
 
-    # Food metabolism, in food per integer timestep (int, or 'none')
-    food_metabolism = 4
+# Food metabolism, in food per integer timestep (int, or 'none')
+food_metabolism = 4
 
-    # Food intake, in food per integer timestep (int, or 'none')
-    food_intake = 20
+# Food intake, in food per integer timestep (int, or 'none')
+food_intake = 20
 
-    # Water capacity (int, or 'none')
-    water_capacity = 100
+# Water capacity (int, or 'none')
+water_capacity = 100
 
-    # Initial water level (int, or 'none')
-    water_initial = 100
+# Initial water level (int, or 'none')
+water_initial = 100
 
-    # Water metabolism, in water per integer timestep (int, or 'none')
-    water_metabolism = 10
+# Water metabolism, in water per integer timestep (int, or 'none')
+water_metabolism = 10
 
-    # Water intake, in food per integer timestep (int, or 'none')
-    water_intake = 30
+# Water intake, in food per integer timestep (int, or 'none')
+water_intake = 30
 
 [Reproduction Parameters]
 
-    # Reproduction specification (str)
-    reproduction_type = pure_replication
+# Reproduction specification (str)
+reproduction_type = pure_replication

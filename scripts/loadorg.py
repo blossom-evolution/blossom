@@ -1,12 +1,24 @@
-"""
-Load simulation parameters from each organism species config file.
+"""Load simulation parameters from each organism species config file.
+
+This module loads simulation parameters from a world configuration file in the
+same directory. 
+
+Attributes:
+    attribute1 (type1): description1
+
+Todo:
+    * For module TODOs
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
 """
 
 import configparser
 import os, glob
 
 # Find organism filenames
-org_files = glob.glob('./*.org')
+org_files = glob.glob('*.org')
 
 # Initialize list of dictionaries to hold all organism parameters
 # Each dictionary contains parameters for a single species
@@ -36,20 +48,19 @@ for org_file in org_files:
     # Cycle through all parameters in the config file, 
     # converting them to proper types as specifed above
     for section in config_org.sections():
-        for key in config_org[section]:
-            temp_param = config_org[section][key]
+        for (key,val) in config_org.items(section):
 
             if key in param_str:
                 pass
             elif key in param_int:
-                temp_param = int(temp_param)
+                val = int(val)
             elif key in param_int_none:
-                if temp_param != 'none':
-                    temp_param = int(temp_param)
+                if val != 'none':
+                    val = int(val)
             elif key in param_bool:
-                temp_param = (temp_param == 'True')
+                val = (val == 'True')
             else:
                 raise NameError('Key is not a valid parameter')
-            org_dict(key) = temp_param
+            org_dict[key] = val
 
     org_dict_list.append(org_dict)

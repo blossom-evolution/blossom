@@ -1,0 +1,53 @@
+# population_size: int
+    org_dict('species_name') =
+
+    # dna_length: int
+    org_dict('species_name') =
+
+    # movement_type: str
+    org_dict('species_name') =
+
+    # max_age: int
+    org_dict('species_name') =
+
+    # max_time_without_food: int, or 'none'
+    org_dict('species_name') =
+
+    # max_time_without_water: int, or 'none'
+    org_dict('species_name') =
+
+    # can_mutate: bool
+    org_dict('species_name') =
+
+    # mutation_rate: int, or 'none'
+    org_dict('species_name') =
+
+    # food_intake_prescription: str, or 'none'
+    org_dict('species_name') =
+
+    # food_capacity: int, or 'none'
+    org_dict('species_name') =
+
+    # food_initial: int, or 'none'
+    org_dict('species_name') =
+
+    # food_metabolism: int, or 'none'
+    org_dict('species_name') =
+
+    # food_intake: int, or 'none'
+    org_dict('species_name') =
+
+    # water_capacity: int, or 'none'
+    org_dict('species_name') =
+
+    # water_initial: int, or 'none'
+    org_dict('species_name') =
+
+    # water_metabolism: int, or 'none'
+    org_dict('species_name') =
+
+    # water_intake: int, or 'none'
+    org_dict('species_name') =
+
+    # reproduction_type: str
+    org_dict('species_name') =

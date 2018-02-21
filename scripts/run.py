@@ -8,7 +8,8 @@ class BaseOrganism(object):
     """ Create a base organism structure for all species """
 
     def __init__(self, **kwargs):
-        """ Create a new organism with arguments based on the species parameter files """
+        """ Create a new organism with arguments based on the species
+            parameter files """
 
         prop_defaults = {
             'species_name': 'species1',

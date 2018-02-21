@@ -1,7 +1,7 @@
 """Load simulation parameters from each organism species config file.
 
 This module loads simulation parameters from a world configuration file in the
-same directory. 
+same directory.
 
 Attributes:
     attribute1 (type1): description1
@@ -28,15 +28,28 @@ for org_file in org_files:
     org_dict = {}
 
     # Parameters that must be str
-    param_str = ['species_name', 'movement_type', 'food_intake_prescription', 'reproduction_type']
+    param_str = ['species_name',
+                 'movement_type',
+                 'food_intake_prescription',
+                 'reproduction_type']
 
     # Parameters that must be int
-    param_int = ['population_size', 'dna_length']
+    param_int = ['population_size',
+                 'dna_length']
 
     # Parameters that must be int or 'None'
-    param_int_none = ['max_age', 'max_time_without_food', 'max_time_without_water', 'mutation_rate',
-                      'food_capacity', 'food_initial', 'food_metabolism', 'food_intake', 
-                      'water_capacity', 'water_initial', 'water_metabolism', 'water_intake']
+    param_int_none = ['max_age',
+                      'max_time_without_food',
+                      'max_time_without_water',
+                      'mutation_rate',
+                      'food_capacity',
+                      'food_initial',
+                      'food_metabolism',
+                      'food_intake',
+                      'water_capacity',
+                      'water_initial',
+                      'water_metabolism',
+                      'water_intake']
 
     # Parameters that must be bool
     param_bool = ['can_mutate']
@@ -45,7 +58,7 @@ for org_file in org_files:
     config_org = configparser.ConfigParser()
     config_org.read(org_file)
 
-    # Cycle through all parameters in the config file, 
+    # Cycle through all parameters in the config file,
     # converting them to proper types as specifed above
     for section in config_org.sections():
         for (key,val) in config_org.items(section):
@@ -61,7 +74,7 @@ for org_file in org_files:
                 val = (val == 'True')
             else:
                 raise NameError('Key is not a valid parameter')
-            
+
             if val == 'None':
                 val = None
             org_dict[key] = val

@@ -12,7 +12,7 @@ Initial Thoughts
 
 - binary DNA (011010101110)
     - makes it easier to compare
-    - should this reflect any properties or behavior? 
+    - should this reflect any properties or behavior?
         - would make it a lot more interesting
 - position (int)
 - age (int / timestep)
@@ -43,3 +43,7 @@ BaseOrganism class; *necessary* states
 - position (depends on dimension)
 - age
 - movement patterns
+
+----
+
+Look into bokeh package for visualization

@@ -2,6 +2,7 @@
 This should probably have stuff in it, unclear what exactly yet.
 """
 
+import uuid
 # import loadenv, loadorg
 
 class BaseOrganism(object):
@@ -13,6 +14,7 @@ class BaseOrganism(object):
 
         prop_defaults = {
             'species_name': 'species1',
+            'id': uuid.uuid4(),
             'population_size': 2,
             'dna_length': 4,
             'movement_type': 'simple_random',

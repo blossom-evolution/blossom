@@ -74,7 +74,7 @@ for org_file in org_files:
                 val = (val == 'True')
             else:
                 raise NameError('Key is not a valid parameter')
-
+            # ensure 'None' parameters are set to None
             if val == 'None':
                 val = None
             org_dict[key] = val

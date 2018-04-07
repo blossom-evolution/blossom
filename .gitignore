@@ -3,6 +3,7 @@
 *.gif
 *.jp[e]g
 images/
+old_files/
 
 # Other
 .DS_Store

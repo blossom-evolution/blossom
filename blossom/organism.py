@@ -12,4 +12,5 @@ def make_organism_class(reproduction_class,
         pass
     return Organism
 
-    
+# initialization should do the randomization
+organism1 = Organism(r,m,f,w)

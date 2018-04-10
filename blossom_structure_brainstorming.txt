@@ -47,3 +47,25 @@ BaseOrganism class; *necessary* states
 ----
 
 Look into bokeh package for visualization
+
+----
+
+To store things, what do we need:
+
+species: all the identification information -- we can also just read this from the parameter files every time though
+organisms: the stuff that species information doesn't tell us
+    some kind of identifier, DNA, age, position
+    but if we want this to be malleable, we should include other quantities as well!
+but in that case, is it even worth having a 'species' identifier
+i think it is, because then you can track how each species changes
+but is it necessary to form classes of them
+idk
+maybe the organism initialization + storage have to keep everything in mind,
+to deal with random fluctuations, but the species definition is pretty constant
+
+
+no need to repeat species info for each organism... unless they change behavior
+    which we might want later on, because that'd be interesting
+
+ID        Species   DNA       Age       Position  [rest of params...]
+****      ****      ****      ****      ****      ****

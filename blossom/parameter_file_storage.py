@@ -2,18 +2,50 @@ import csv
 import configparser
 import os, glob
 
-class DatasetStorage(object):
+# perhaps it doesn't make too much sense to write these as classes
+class DatasetLoad(object):
     """
-    Store information from a certain dataset, e.g. to resume a simulation.
+    Load information from a certain dataset, e.g. to resume a simulation.
     """
+    world_field_names = ['dimensionality',
+                         'world_size',
+                         'environment_filename']
+    specific_organism_field_names = ['organism_id',
+                            'dna',
+                            'age',
+                            'position',
+                            'sex',
+                            'water_current'
+                            'food_current']
+    species_field_names = ['species_name',
+                            'movement_type',
+                            'reproduction_type',
+                            'drinking_type',
+                            'eating_type',
+                            'dna_length',
+                            'max_age',
+                            'max_time_without_food',
+                            'max_time_without_water',
+                            'mutation_rate',
+                            'food_capacity',
+                            'food_initial',
+                            'food_metabolism',
+                            'food_intake',
+                            'water_capacity',
+                            'water_initial',
+                            'water_metabolism',
+                            'water_intake']
+    organism_field_names = specific_organism_field_names + species_field_names
 
     def __init__(self, world_fn='', organism_fns=[]):
         self.world_fn = world_fn
         self.organism_fns = organism_fns
-        self.world_records = self.read_datasets(world_fn)
-        self.organism_records = self.read_datasets(organism_fns)
+        self.world_records = self.read_datasets(world_fn,
+                                                world_field_names)
+        self.organism_records = self.read_datasets(organism_fns,
+                                                   organism_field_names)
 
-    def read_datasets(fns):
+    def read_datasets(fns, field_names):
         """
         Load dataset files.
         filenames can be a single string or a list of strings.
@@ -28,9 +60,9 @@ class DatasetStorage(object):
         return vals
 
 
-class ParameterStorage(object):
+class ParameterLoad(object):
     """
-    Store initial parameters from parameter files.
+    Load initial parameters from parameter files.
     """
     def __init__(self, world_fn='', species_fs=[]):
         self.world_fn = world_fn
@@ -54,12 +86,14 @@ class ParameterStorage(object):
                 + 'Selecting one at random.')
         env_file = env_file[0]
 
+        world_dict = {}
         # Load from config file
         config_world = configparser.ConfigParser()
         config_world.read(env_file)
 
         # dimensionality: int
         dimensionality = int(config_world.get('Overall Parameters', 'dimensionality'))
+        world_dict['dimensionality'] = dimensionality
 
         # world_size: space delimited ints in agreement with dimensionality, or 'None'
         # example: world_size = 10 10
@@ -68,12 +102,16 @@ class ParameterStorage(object):
             world_size = None
         else:
             world_size = [int(L) for L in world_size.split()]
+        world_dict['world_size'] = world_size
 
         # environment_filename: str, or 'None'
         environment_filename = config_world.get('Overall Parameters',
                                                 'environment_filename')
         if environment_filename == 'None':
             environment_filename = None
+        world_dict['environment_filename'] = environment_filename
+
+        return world_dict
 
 
     def read_species_params(fns):
@@ -83,7 +121,7 @@ class ParameterStorage(object):
         """
 
         # Find organism filenames
-        org_files = glob.glob('*.org')
+        org_files = glob.glob(fns)
 
         # Initialize list of dictionaries to hold all organism parameters
         # Each dictionary contains parameters for a single species
@@ -95,26 +133,34 @@ class ParameterStorage(object):
             # Parameters that must be str
             param_str = ['species_name',
                          'movement_type',
-                         'food_intake_prescription',
-                         'reproduction_type']
+                         'reproduction_type',
+                         'drinking_type',
+                         'eating_type']
 
             # Parameters that must be int
             param_int = ['population_size',
-                         'dna_length']
+                         'dna_length',
+                         'max_age',
+                           'max_time_without_food',
+                           'max_time_without_water',
+                           'mutation_rate',
+                           'food_capacity',
+                           'food_initial',
+                           'food_metabolism',
+                           'food_intake',
+                           'water_capacity',
+                           'water_initial',
+                           'water_metabolism',
+                           'water_intake']
 
             # Parameters that must be int or 'None'
-            param_int_none = ['max_age',
-                              'max_time_without_food',
-                              'max_time_without_water',
-                              'mutation_rate',
-                              'food_capacity',
-                              'food_initial',
-                              'food_metabolism',
-                              'food_intake',
-                              'water_capacity',
-                              'water_initial',
-                              'water_metabolism',
-                              'water_intake']
+            param_int_none = []
+
+            # Parameters that must be float
+            param_float = ['proportion_M',
+                           'proportion_F',
+                           'proportion_A',
+                           'proportion_H']
 
             # Parameters that must be bool
             param_bool = ['can_mutate']
@@ -135,6 +181,8 @@ class ParameterStorage(object):
                     elif key in param_int_none:
                         if val != 'None':
                             val = int(val)
+                    elif key in param_float:
+                        val = float(val)
                     elif key in param_bool:
                         val = (val == 'True')
                     else:
@@ -145,3 +193,5 @@ class ParameterStorage(object):
                     org_dict[key] = val
 
             org_dict_list.append(org_dict)
+
+            return org_dict_list

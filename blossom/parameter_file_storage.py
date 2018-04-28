@@ -40,12 +40,15 @@ class DatasetLoad(object):
     def __init__(self, world_fn='', organism_fns=[]):
         self.world_fn = world_fn
         self.organism_fns = organism_fns
-        self.world_records = self.read_datasets(world_fn,
+        self.world_records = self.load_datasets(world_fn,
                                                 world_field_names)
-        self.organism_records = self.read_datasets(organism_fns,
+        self.organism_records = self.load_datasets(organism_fns,
                                                    organism_field_names)
 
-    def read_datasets(fns, field_names):
+    # returns list of dictionaries
+    # class method:
+    # @classmethod
+    def load_datasets(fns, field_names):
         """
         Load dataset files.
         filenames can be a single string or a list of strings.
@@ -64,13 +67,15 @@ class ParameterLoad(object):
     """
     Load initial parameters from parameter files.
     """
-    def __init__(self, world_fn='', species_fs=[]):
-        self.world_fn = world_fn
-        self.species_fns = species_fns
-        self.world_records = self.read_world_params(world)
-        self.species_records = self.read_species_params(species)
+    def __init__(self, world_param_fn='', species_param_fs=[]):
+        self.world_param_fn = world_param_fn
+        self.species_param_fns = species_param_fns
+        self.world_params = self.load_world_params(world)
+        self.species_params = self.load_species_params(species)
 
-    def read_world_params(fns):
+    # class method:
+    # @classmethod
+    def load_world_params(fns):
         """
         Load world parameter files.
         filenames can be a single string or a list of strings.
@@ -99,6 +104,7 @@ class ParameterLoad(object):
         # example: world_size = 10 10
         world_size = config_world.get('Overall Parameters', 'world_size')
         if world_size == 'None':
+            # this is probably harder to do, since we'd have to allow for infinite bounds...
             world_size = None
         else:
             world_size = [int(L) for L in world_size.split()]
@@ -113,8 +119,9 @@ class ParameterLoad(object):
 
         return world_dict
 
-
-    def read_species_params(fns):
+    # class method:
+    # @classmethod
+    def load_species_params(fns):
         """
         Load all available species parameter files.
         filenames can be a single string or a list of strings.

@@ -69,3 +69,8 @@ no need to repeat species info for each organism... unless they change behavior
 
 ID        Species   DNA       Age       Position  [rest of params...]
 ****      ****      ****      ****      ****      ****
+
+
+What is important to store about world?
+
+Position  (other stuff?)

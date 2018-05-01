@@ -1,49 +1,21 @@
 import csv
 import configparser
 import os, glob
+import fields
 
 # perhaps it doesn't make too much sense to write these as classes
 class DatasetLoad(object):
     """
     Load information from a certain dataset, e.g. to resume a simulation.
     """
-    world_field_names = ['dimensionality',
-                         'world_size',
-                         'environment_filename']
-    specific_organism_field_names = ['organism_id',
-                            'dna',
-                            'age',
-                            'position',
-                            'sex',
-                            'water_current'
-                            'food_current']
-    species_field_names = ['species_name',
-                            'movement_type',
-                            'reproduction_type',
-                            'drinking_type',
-                            'eating_type',
-                            'dna_length',
-                            'max_age',
-                            'max_time_without_food',
-                            'max_time_without_water',
-                            'mutation_rate',
-                            'food_capacity',
-                            'food_initial',
-                            'food_metabolism',
-                            'food_intake',
-                            'water_capacity',
-                            'water_initial',
-                            'water_metabolism',
-                            'water_intake']
-    organism_field_names = specific_organism_field_names + species_field_names
 
     def __init__(self, world_fn='', organism_fns=[]):
         self.world_fn = world_fn
         self.organism_fns = organism_fns
         self.world_records = self.load_datasets(world_fn,
-                                                world_field_names)
+                                                fields.world_field_names.keys())
         self.organism_records = self.load_datasets(organism_fns,
-                                                   organism_field_names)
+                                                   fields.organism_field_names.keys())
 
     # returns list of dictionaries
     # class method:

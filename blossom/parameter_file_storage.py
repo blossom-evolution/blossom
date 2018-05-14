@@ -2,27 +2,24 @@ import csv
 import configparser
 import os, glob
 import fields
+import world
+import organism
 
-# perhaps it doesn't make too much sense to write these as classes
-class DatasetLoad(object):
+class DatasetIO(object):
     """
-    Load information from a certain dataset, e.g. to resume a simulation.
+    Load information from a certain dataset, e.g. to resume a simulation, and
+    write world and organism data back to file.
     """
 
-    def __init__(self, world_fn='', organism_fns=[]):
-        self.world_fn = world_fn
-        self.organism_fns = organism_fns
-        self.world_records = self.load_datasets(world_fn,
-                                                fields.world_field_names.keys())
-        self.organism_records = self.load_datasets(organism_fns,
-                                                   fields.organism_field_names.keys())
+    def __init__(self):
+        pass
 
     # returns list of dictionaries
     # class method:
     # @classmethod
-    def load_datasets(fns, field_names):
+    def load_world_dataset(fn, field_names):
         """
-        Load dataset files.
+        Load dataset file from JSON.
         filenames can be a single string or a list of strings.
         """
         vals = []
@@ -34,26 +31,53 @@ class DatasetLoad(object):
             f.close()
         return vals
 
+    def write_world_dataset(fn, field_names):
+        """
+        Write world information from World object to file in JSON format.
+        """
+        pass
 
-class ParameterLoad(object):
+    # returns list of dictionaries
+    # class method:
+    # @classmethod
+    def load_organism_dataset(fn, field_names):
+        """
+        Load dataset file from JSON.
+        filenames can be a single string or a list of strings.
+        """
+        vals = []
+        for fn in fns:
+            f = open(fn, 'r')
+            reader = csv.DictReader(f, field_names)
+            for row in reader:
+                vals.append(row)
+            f.close()
+        return vals
+
+    def write_organism_dataset(fn, field_names):
+        """
+        Write organism data from list of Organism objects to file in JSON
+        format.
+        """
+        pass
+
+
+class ParameterIO(object):
     """
     Load initial parameters from parameter files.
     """
-    def __init__(self, world_param_fn='', species_param_fs=[]):
-        self.world_param_fn = world_param_fn
-        self.species_param_fns = species_param_fns
-        self.world_params = self.load_world_params(world)
-        self.species_params = self.load_species_params(species)
+    def __init__(self):
+        pass
 
     # class method:
     # @classmethod
-    def load_world_params(fns):
+    def load_world_parameters(fn):
         """
         Load world parameter files.
         filenames can be a single string or a list of strings.
         """
 
-        env_file = glob.glob(fns)
+        env_file = glob.glob(fn)
         if len(env_file) == 0:
             raise IndexError('There is no environment configuration file in the '
                 + 'current directory.')
@@ -91,9 +115,13 @@ class ParameterLoad(object):
 
         return world_dict
 
+    # Takes in world parameters to initialize World object
+    def create_world(fn):
+        return World()
+
     # class method:
     # @classmethod
-    def load_species_params(fns):
+    def load_species_parameters(fns):
         """
         Load all available species parameter files.
         filenames can be a single string or a list of strings.
@@ -174,3 +202,7 @@ class ParameterLoad(object):
             org_dict_list.append(org_dict)
 
             return org_dict_list
+
+        # Takes in species parameters to initialize list of Organism objects
+        def create_organisms(fns):
+            return [Organism()]

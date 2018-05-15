@@ -9,7 +9,7 @@ world_field_names = {'dimensionality': 1,
 specific_organism_field_names = {'organism_id': None,
                         'dna': '0000',
                         'age': 0,
-                        'position': [0, 0],
+                        'position': [0],
                         'sex': None,
                         'water_current': None,
                         'food_current': None}

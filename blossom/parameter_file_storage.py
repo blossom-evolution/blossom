@@ -5,7 +5,7 @@ import fields
 import world
 import organism
 
-class DatasetIO(object):
+class DatasetIO():
     """
     Load information from a certain dataset, e.g. to resume a simulation, and
     write world and organism data back to file.
@@ -21,6 +21,14 @@ class DatasetIO(object):
         """
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
+
+        Args:
+            fn (str): Input filename of saved world dataset
+            field_names (list): World attributes to load from file
+
+        Returns:
+            World: The return value. The reconstructed World object
+            from the saved dataset.
         """
         vals = []
         for fn in fns:
@@ -34,6 +42,10 @@ class DatasetIO(object):
     def write_world_dataset(fn, field_names):
         """
         Write world information from World object to file in JSON format.
+
+        Args:
+            fn (str): Output filename of saved world dataset
+            field_names (list): World attributes to write to file
         """
         pass
 
@@ -44,6 +56,15 @@ class DatasetIO(object):
         """
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
+
+        Args:
+            fn (str): Input filename of saved organism dataset
+            field_names (list): Organism attributes to load (per organism)
+                from file
+
+        Returns:
+            list: The return value. A list of Organism objects
+            reconstructed from the saved dataset.
         """
         vals = []
         for fn in fns:
@@ -58,11 +79,16 @@ class DatasetIO(object):
         """
         Write organism data from list of Organism objects to file in JSON
         format.
+
+        Args:
+            fn (str): Output filename of saved organism dataset
+            field_names (list): Organism attributes to write (per organism)
+                to file.
         """
         pass
 
 
-class ParameterIO(object):
+class ParameterIO():
     """
     Load initial parameters from parameter files.
     """
@@ -75,6 +101,13 @@ class ParameterIO(object):
         """
         Load world parameter files.
         filenames can be a single string or a list of strings.
+
+        Args:
+            fn (str): Input filename of parameter file
+
+        Returns:
+            World: The return value. A World object constructed
+            from the parameter file.
         """
 
         env_file = glob.glob(fn)
@@ -115,16 +148,19 @@ class ParameterIO(object):
 
         return world_dict
 
-    # Takes in world parameters to initialize World object
-    def create_world(fn):
-        return World()
-
     # class method:
     # @classmethod
     def load_species_parameters(fns):
         """
         Load all available species parameter files.
         filenames can be a single string or a list of strings.
+
+        Args:
+            fn (str): Input filename of parameter file
+
+        Returns:
+            list: The return value. A list of Organism objects constructed
+            from the parameter file.
         """
 
         # Find organism filenames
@@ -202,7 +238,3 @@ class ParameterIO(object):
             org_dict_list.append(org_dict)
 
             return org_dict_list
-
-        # Takes in species parameters to initialize list of Organism objects
-        def create_organisms(fns):
-            return [Organism()]

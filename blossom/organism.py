@@ -1,23 +1,28 @@
-import organism_classes as oc
+#import organism_classes as oc
 import fields
 import uuid
 
-class BaseOrganism(object):
+class Organism(object):
     """ Create a base organism structure for all species """
 
-    def __init__(self, **kwargs):
+    def __init__(self, init_dict = {}):
         """ Create a new organism with arguments based on the species
             parameter files """
 
         # Sets up defaults based on species parameters
         for (prop, default) in fields.species_field_names.items():
-            setattr(self, prop, kwargs.get(prop, default))
+            setattr(self, prop, init_dict.get(prop, default))
 
         # Sets up defaults based on organism parameters
         for (prop, default) in fields.specific_organism_field_names.items():
-            setattr(self, prop, kwargs.get(prop, default))
+            setattr(self, prop, init_dict.get(prop, default))
+        #
+        # self.movement = Movement()
+        # self.reproduction = Reproduction()
+        # self.drinking = Drinking()
+        # self.eating = Eating()
 
-        # self.age = 0
+        self.intent_dict = None
 
     def move(self):
         pass

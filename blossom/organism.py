@@ -1,6 +1,7 @@
-#import organism_classes as oc
-import fields
 import uuid
+import numpy as np
+import fields
+from organism_behavior import Movement, Reproduction, Drinking, Eating, Behavior
 
 class Organism(object):
     """ Create a base organism structure for all species """
@@ -16,41 +17,44 @@ class Organism(object):
         # Sets up defaults based on organism parameters
         for (prop, default) in fields.specific_organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
-        #
-        # self.movement = Movement()
-        # self.reproduction = Reproduction()
-        # self.drinking = Drinking()
-        # self.eating = Eating()
 
-        self.intent_dict = None
+        self.movement = Movement(movement_type)
+        self.reproduction = Reproduction(reproduction_type)
+        self.drinking = Drinking(drinking_type)
+        self.eating = Eating(eating_type)
+        self.behavior = Behavior(behavior_type)\
 
-    def move(self):
+    def update(self, organism):
+        """
+        Update organism dict with parameters from organism
+        """
         pass
 
-    def reproduce(self):
-        pass
+    def move(self, organism_list):
+        return movement.move(self, organism_list)
 
-    def drink(self):
-        pass
+    def reproduce(self, organism_list):
+        return reproduction.reproduce(self, organism_list)
 
-    def eat(self):
-        pass
+    def drink(self, organism_list):
+        return drinking.drink(self, organism_list)
 
-    pass
+    def eat(self, organism_list):
+        return eating.eat(self, organism_list)
 
-# maybe put this in species.py? depends on use in executable
-def make_organism_class(movement,
-                        reproduction,
-                        drinking,
-                        eating):
-    class Organism(movement=movement,
-                   reproduction=reproduction,
-                   drinking=drinking,
-                   eating=eating):
-        pass
-    return Organism
-
-# randomization should occur at initialization
-# but maybe have Universe class handle this
-# MyOrganism = make_organism_class(m,r,d,e)
-# organism1 = MyOrganism()
+    def act(self, organism_list):
+        """
+        Call the appropriate action determined by behavior.act
+        """
+        return globals()[behavior.act(self, organism_list)](self, organism_list)
+        # a = np.random.randint(0,5)
+        # if a == 0:
+        #     return move(self, organism_list)
+        # elif a == 1:
+        #     return reproduce(self, organism_list)
+        # elif a == 2:
+        #     return drink(self, organism_list)
+        # elif a == 3:
+        #     return eat(self, organism_list)
+        # else:
+        #     return self

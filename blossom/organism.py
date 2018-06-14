@@ -18,11 +18,11 @@ class Organism(object):
         for (prop, default) in fields.specific_organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
 
-        self.movement = Movement(movement_type)
-        self.reproduction = Reproduction(reproduction_type)
-        self.drinking = Drinking(drinking_type)
-        self.eating = Eating(eating_type)
-        self.behavior = Behavior(behavior_type)\
+        self.movement = Movement()
+        self.reproduction = Reproduction()
+        self.drinking = Drinking()
+        self.eating = Eating()
+        self.behavior = Behavior()
 
     def update(self, organism):
         """

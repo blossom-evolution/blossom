@@ -6,7 +6,7 @@ class Movement(object):
         """
         Return affected organisms
         """
-        pass
+        getattr(movement, organism.movement_type)(organism, organism_list)
 
 class Reproduction(object):
 
@@ -14,7 +14,7 @@ class Reproduction(object):
         """
         Return affected organisms
         """
-        pass
+        getattr(reproduction, organism.reproduction_type)(organism, organism_list)
 
 class Drinking(object):
 
@@ -22,7 +22,7 @@ class Drinking(object):
         """
         Return affected organisms
         """
-        pass
+        getattr(drinking, organism.drinking_type)(organism, organism_list)
 
 class Eating(object):
 
@@ -30,12 +30,12 @@ class Eating(object):
         """
         Return affected organisms
         """
-        pass
+        getattr(eating, organism.eating_type)(organism, organism_list)
 
 class Action(object):
 
     def act(organism, organism_list):
         """
-        Return an action ("move", "reproduce", "drink", "eat") as a string
+        Return an action ('move', 'reproduce', 'drink', 'eat') as a string
         """
-        pass
+        getattr(action, organism.action_type)(organism, organism_list)

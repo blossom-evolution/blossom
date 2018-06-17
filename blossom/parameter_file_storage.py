@@ -11,9 +11,6 @@ class DatasetIO():
     write world and organism data back to file.
     """
 
-    def __init__(self):
-        pass
-
     # returns list of dictionaries
     # class method:
     # @classmethod
@@ -92,8 +89,6 @@ class ParameterIO():
     """
     Load initial parameters from parameter files.
     """
-    def __init__(self):
-        pass
 
     # class method:
     # @classmethod

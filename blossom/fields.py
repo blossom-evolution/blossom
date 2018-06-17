@@ -15,8 +15,8 @@ specific_organism_field_names = {'organism_id': None,
                         'food_current': None}
 
 species_field_names = {'species_name': 'species1',
-                        'movement_type': 'simple_random',
-                        'reproduction_type': 'pure_replication',
+                        'movement_type': 'stationary',
+                        'reproduction_type': None,
                         'drinking_type': None,
                         'eating_type': None,
                         'action_type': 'move_only'

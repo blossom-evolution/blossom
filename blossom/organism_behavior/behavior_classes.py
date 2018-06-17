@@ -1,38 +1,50 @@
 import movement, reproduction, drinking, eating, action
 
-class Movement(object):
+class Movement():
 
     def move(organism, organism_list):
         """
         Return affected organisms
         """
-        getattr(movement, organism.movement_type)(organism, organism_list)
+        if organism.movement_type is None:
+            return organism
+        else:
+            getattr(movement, organism.movement_type)(organism, organism_list)
 
-class Reproduction(object):
+class Reproduction():
 
     def reproduce(organism, organism_list):
         """
         Return affected organisms
         """
-        getattr(reproduction, organism.reproduction_type)(organism, organism_list)
+        if organism.reproduction_type is None:
+            return organism
+        else:
+            getattr(reproduction, organism.reproduction_type)(organism, organism_list)
 
-class Drinking(object):
+class Drinking():
 
     def drink(organism, organism_list):
         """
         Return affected organisms
         """
-        getattr(drinking, organism.drinking_type)(organism, organism_list)
+        if organism.drinking_type is None:
+            return organism
+        else:
+            getattr(drinking, organism.drinking_type)(organism, organism_list)
 
-class Eating(object):
+class Eating():
 
     def eat(organism, organism_list):
         """
         Return affected organisms
         """
-        getattr(eating, organism.eating_type)(organism, organism_list)
+        if organism.eating_type is None:
+            return organism
+        else:
+            getattr(eating, organism.eating_type)(organism, organism_list)
 
-class Action(object):
+class Action():
 
     def act(organism, organism_list):
         """

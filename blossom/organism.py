@@ -18,20 +18,20 @@ class Organism(object):
         for (prop, default) in fields.specific_organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
 
-    def move(self, organism_list):
-        return Movement.move(self, organism_list)
+    def move(self, organism_list, world):
+        return Movement.move(self, organism_list, world)
 
-    def reproduce(self, organism_list):
-        return Reproduction.reproduce(self, organism_list)
+    def reproduce(self, organism_list, world):
+        return Reproduction.reproduce(self, organism_list, world)
 
-    def drink(self, organism_list):
-        return Drinking.drink(self, organism_list)
+    def drink(self, organism_list, world):
+        return Drinking.drink(self, organism_list, world)
 
-    def eat(self, organism_list):
-        return Eating.eat(self, organism_list)
+    def eat(self, organism_list, world):
+        return Eating.eat(self, organism_list, world)
 
-    def act(self, organism_list):
+    def act(self, organism_list, world):
         """
         Call the appropriate action determined by action.act
         """
-        return globals()[Action.act(self, organism_list)](self, organism_list)
+        return globals()[Action.act(self, organism_list, world)](self, organism_list, world)

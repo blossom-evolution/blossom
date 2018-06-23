@@ -22,7 +22,7 @@ action_type = move_only
 [Movement Parameters]
 
 # Movement specification (str)
-movement_type = stationary
+movement_type = simple_random
 
 [Reproduction Parameters]
 

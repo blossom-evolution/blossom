@@ -18,6 +18,13 @@ class Organism(object):
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
+    def update_life(self):
+        """
+        Checks whether organism is alive -- sets alive to False otherwise
+        """
+        if self.age > self.max_age:
+            self.alive = False
+
     def move(self, organism_list, world):
         return Movement.move(self, organism_list, world)
 
@@ -34,4 +41,8 @@ class Organism(object):
         """
         Call the appropriate action determined by action.act
         """
-        return getattr(Organism, str(Action.act(self, organism_list, world)))(self, organism_list, world)
+        self.update_life()
+        if self.alive:
+            return getattr(Organism, Action.act(self, organism_list, world))(self, organism_list, world)
+        else:
+            return self

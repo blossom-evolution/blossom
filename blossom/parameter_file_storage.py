@@ -3,6 +3,7 @@ import glob
 import configparser
 import json
 import numpy as np
+import random
 
 import fields
 from world import World
@@ -143,7 +144,7 @@ class ParameterIO():
 
     # class method:
     # @classmethod
-    def load_species_parameters(fns):
+    def load_species_parameters(fns, init_world):
         """
         Load all available species parameter files.
         filenames can be a single string or a list of strings.
@@ -231,6 +232,13 @@ class ParameterIO():
 
             # Generate all organisms
             for i in range(organism_dict['population_size']):
+                # Vary organism location randomly
+                position = []
+                for i in range(init_world.dimensionality):
+                    position.append(random.randrange(0,init_world.world_size[i]))
+                organism_dict['position'] = position
+
+                # Add organism to organism list
                 organism_list.append(Organism(organism_dict))
 
             return organism_list

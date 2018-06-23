@@ -3,10 +3,6 @@ import os
 import glob
 import errno
 
-import fields
-import world
-import organism
-
 from parameter_file_storage import DatasetIO as DIO
 from parameter_file_storage import ParameterIO as PIO
 
@@ -47,33 +43,33 @@ class Universe(object):
         self.file_extension = file_extension
 
         # world is a World object
-        self.world = self.initialize_world(world_fn, world_param_fn)
+        self.world = self.initialize_world()
         # organisms is a list of Organism objects
-        self.organism_list = self.initialize_organisms(organism_fns, species_param_fns)
+        self.organism_list = self.initialize_organisms()
         self.intent_list = []
 
     # return World object
-    def initialize_world(self, world_fn=None, world_param_fn=None):
+    def initialize_world(self):
         # world = world.World()
-        if world_fn is not None:
-            world = DIO.load_world_dataset(world_fn)
+        if self.world_fn is not None:
+            world = DIO.load_world_dataset(self.world_fn)
             # TODO: set up entire world based on world records
-        elif world_param_fn is not None:
-            world = PIO.load_world_parameters(world_param_fn)
+        elif self.world_param_fn is not None:
+            world = PIO.load_world_parameters(self.world_param_fn)
             DIO.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
             # TODO: set up entire world based on parameter file
         else:
             sys.exit('No files specified for initialization!')
         return world
 
-    def initialize_organisms(self, organism_fns=None, species_param_fns=None):
+    def initialize_organisms(self):
         # organisms is a list of Organism objects
         # organisms = []
-        if organism_fns is not None:
-            organism_list = DIO.load_organism_dataset(organism_fns)
+        if self.organism_fns is not None:
+            organism_list = DIO.load_organism_dataset(self.organism_fns)
             # TODO: set up all organisms based on organism records
-        elif species_param_fns is not None:
-            organism_list = PIO.load_species_parameters(species_param_fns)
+        elif self.species_param_fns is not None:
+            organism_list = PIO.load_species_parameters(self.species_param_fns, self.world)
             DIO.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
             # TODO: set up all organisms based on species specifications
         else:

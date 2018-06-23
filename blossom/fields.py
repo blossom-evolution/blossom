@@ -3,7 +3,7 @@ Fields + defaults
 """
 
 world_field_names = {'dimensionality': 1,
-                     'world_size': 10,
+                     'world_size': [10],
                      'environment_filename': None}
 
 specific_organism_field_names = {'organism_id': None,

@@ -20,7 +20,7 @@ species_field_names = {'species_name': 'species1',
                         'reproduction_type': None,
                         'drinking_type': None,
                         'eating_type': None,
-                        'action_type': 'move_only'
+                        'action_type': 'move_only',
                         'dna_length': 4,
                         'max_age': 20,
                         'max_time_without_food': None,

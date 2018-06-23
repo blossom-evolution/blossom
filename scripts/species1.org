@@ -1,0 +1,84 @@
+# This is the parameter file for a species of organism.
+
+[General Parameters]
+
+# Identifier (str)
+species_name = species1
+
+# Number of organisms (int)
+population_size = 2
+
+# Initial DNA length (int)
+dna_length = 4
+
+# Maximum old age (int, or 'None')
+max_age = 20
+
+[Action Parameters]
+
+# Action specification (str)
+action_type = move_only
+
+[Movement Parameters]
+
+# Movement specification (str)
+movement_type = simple_random
+
+[Reproduction Parameters]
+
+# Reproduction specification (str)
+reproduction_type = pure_replication
+
+# male, female, asexual, hermaphrodite
+proportion_m = 0.5
+proportion_f = 0.5
+proportion_a = 0.0
+proportion_h = 0.0
+
+[Drinking Parameters]
+
+# Water intake method (str, or 'None')
+drinking_type = None
+
+# Water capacity (int, or 'None')
+water_capacity = None
+
+# Initial water level (int, or 'None')
+water_initial = None
+
+# Water metabolism, in water per integer timestep (int, or 'None')
+water_metabolism = None
+
+# Water intake, in food per integer timestep (int, or 'None')
+water_intake = None
+
+# Lifetime without water (int, or 'None')
+max_time_without_water = None
+
+[Eating Parameters]
+
+# Food intake method (str, or 'None')
+eating_type = None
+
+# Food capacity (int, or 'None')
+food_capacity = None
+
+# Initial food level (int, or 'None')
+food_initial = None
+
+# Food metabolism, in food per integer timestep (int, or 'None')
+food_metabolism = None
+
+# Food intake, in food per integer timestep (int, or 'None')
+food_intake = None
+
+# Lifetime without food (int, or 'None')
+max_time_without_food = None
+
+[Mutation Parameters]
+
+# Whether organisms can mutate (bool)
+can_mutate = False
+
+# Mutation rate, in bit flips per integer timestep (int, or 'None')
+mutation_rate = None

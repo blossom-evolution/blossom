@@ -1,5 +1,5 @@
 import uuid
-import numpy as np
+
 import fields
 from organism_behavior import Movement, Reproduction, Drinking, Eating, Action
 
@@ -10,13 +10,13 @@ class Organism(object):
         """ Create a new organism with arguments based on the species
             parameter files """
 
-        # Sets up defaults based on species parameters
-        for (prop, default) in fields.species_field_names.items():
+        # Sets up defaults based on organism parameters
+        for (prop, default) in fields.organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
 
-        # Sets up defaults based on organism parameters
-        for (prop, default) in fields.specific_organism_field_names.items():
-            setattr(self, prop, init_dict.get(prop, default))
+        # Set unique id
+        if self.organism_id is None:
+            self.organism_id = str(uuid.uuid4())
 
     def move(self, organism_list, world):
         return Movement.move(self, organism_list, world)

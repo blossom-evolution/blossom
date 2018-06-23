@@ -4,6 +4,7 @@
 *.jp[e]g
 images/
 old_files/
+scripts/datasets
 
 # Other
 .DS_Store

@@ -1,12 +1,14 @@
-import parameter_file_storage.DatasetLoad as dl
-import parameter_file_storage.ParameterLoad as pl
-import fields
 import sys
 import os
 import glob
+import errno
+
+import fields
 import world
-import species
 import organism
+
+from parameter_file_storage import DatasetIO as DIO
+from parameter_file_storage import ParameterIO as PIO
 
 class Universe(object):
     """
@@ -17,55 +19,73 @@ class Universe(object):
                  world_fn=None,
                  organism_fns=None,
                  world_param_fn=None,
-                 species_param_fs=None,
+                 species_param_fns=None,
                  current_time=0,
-                 end_time=10):
+                 end_time=10,
+                 dataset_dir='datasets/',
+                 pad_zeroes=4,
+                 file_extension='.txt'):
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
         self.world_fn = world_fn
         self.organism_fns = organism_fns
+
         self.current_time = current_time
         self.end_time = end_time
 
+        self.dataset_dir = dataset_dir
+        if dataset_dir[-1] != '/':
+            self.dataset_dir += '/'
+        try:
+            os.makedirs(dataset_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        self.pad_zeroes = pad_zeroes
+        while (self.end_time - self.current_time) >= 10**self.pad_zeroes:
+            self.pad_zeroes += 1
+        self.file_extension = file_extension
+
         # world is a World object
-        self.world = initialize_world(world_fns, world_param_fn)
+        self.world = self.initialize_world(world_fn, world_param_fn)
         # organisms is a list of Organism objects
-        self.organism_list = initialize_organisms(organism_fns, species_param_fs)
+        self.organism_list = self.initialize_organisms(organism_fns, species_param_fns)
         self.intent_list = []
 
     # return World object
     def initialize_world(self, world_fn=None, world_param_fn=None):
         # world = world.World()
         if world_fn is not None:
-            world = dl.load_datasets(world_fn, fields.world_field_names.keys())
+            world = DIO.load_world_dataset(world_fn, fields.world_field_names.keys())
             # TODO: set up entire world based on world records
         elif world_param_fn is not None:
-            world = pl.load_world_params(world_param_fn)
+            world = PIO.load_world_parameters(world_param_fn)
             # TODO: set up entire world based on parameter file
-            pass
         else:
             sys.exit('No files specified for initialization!')
         return world
 
-    def initialize_organisms(self, organism_fns=None, species_param_fs=None):
+    def initialize_organisms(self, organism_fns=None, species_param_fns=None):
         # organisms is a list of Organism objects
         # organisms = []
         if organism_fns is not None:
-            organism_list = dl.load_datasets(organism_fns,
+            organism_list = DIO.load_organism_dataset(organism_fns,
                                             fields.organism_field_names.keys())
             # TODO: set up all organisms based on organism records
-        elif species_param_fs is not None:
-            organism_list = pl.load_species_params(species_param_fns)
+        elif species_param_fns is not None:
+            organism_list = PIO.load_species_parameters(species_param_fns)
             # TODO: set up all organisms based on species specifications
-            pass
         else:
             sys.exit('No files specified for initialization!')
         return organism_list
 
     def step(self):
+        DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+
         self.organism_list = self.intent_list
         self.intent_list = []
-        for organism in organism_list:
+        for organism in self.organism_list:
             self.intent_list.append(organism.act(self.organism_list, self.world))
         # Somehow parse whether the intent_list makes sense, otherwise revise it
         self.current_time += 1

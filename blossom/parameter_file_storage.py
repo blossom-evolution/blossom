@@ -1,9 +1,13 @@
-import csv
+import os
+import glob
 import configparser
-import os, glob
+import json
+import numpy as np
+
 import fields
-import world
-import organism
+from world import World
+from organism import Organism
+
 
 class DatasetIO():
     """
@@ -14,7 +18,7 @@ class DatasetIO():
     # returns list of dictionaries
     # class method:
     # @classmethod
-    def load_world_dataset(fn, field_names):
+    def load_world_dataset(fn):
         """
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
@@ -27,16 +31,11 @@ class DatasetIO():
             World: The return value. The reconstructed World object
             from the saved dataset.
         """
-        vals = []
-        for fn in fns:
-            f = open(fn, 'r')
-            reader = csv.DictReader(f, field_names)
-            for row in reader:
-                vals.append(row)
-            f.close()
-        return vals
+        with open(fn, 'r') as f:
+            world_dict = json.load(f)
+        return World(world_dict)
 
-    def write_world_dataset(fn, field_names):
+    def write_world_dataset(world, fn):
         """
         Write world information from World object to file in JSON format.
 
@@ -44,12 +43,13 @@ class DatasetIO():
             fn (str): Output filename of saved world dataset
             field_names (list): World attributes to write to file
         """
-        pass
+        with open(fn, 'w') as f:
+            json.dump(vars(world), f, indent=2)
 
     # returns list of dictionaries
     # class method:
     # @classmethod
-    def load_organism_dataset(fn, field_names):
+    def load_organism_dataset(fn):
         """
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
@@ -63,16 +63,12 @@ class DatasetIO():
             list: The return value. A list of Organism objects
             reconstructed from the saved dataset.
         """
-        vals = []
-        for fn in fns:
-            f = open(fn, 'r')
-            reader = csv.DictReader(f, field_names)
-            for row in reader:
-                vals.append(row)
-            f.close()
-        return vals
+        with open(fn, 'r') as f:
+            organism_dict_list = json.load(fn)
+        organism_list = [Organism(organism_dict) for organism_dict in organism_dict_list]
+        return organism_list
 
-    def write_organism_dataset(fn, field_names):
+    def write_organism_dataset(organism_list, fn):
         """
         Write organism data from list of Organism objects to file in JSON
         format.
@@ -82,8 +78,9 @@ class DatasetIO():
             field_names (list): Organism attributes to write (per organism)
                 to file.
         """
-        pass
-
+        organism_dict_list = [vars(organism) for organism in organism_list]
+        with open(fn, 'w') as f:
+            json.dump(organism_dict_list, f, indent=2)
 
 class ParameterIO():
     """
@@ -141,7 +138,8 @@ class ParameterIO():
             environment_filename = None
         world_dict['environment_filename'] = environment_filename
 
-        return world_dict
+        return World(world_dict)
+
 
     # class method:
     # @classmethod
@@ -158,47 +156,47 @@ class ParameterIO():
             from the parameter file.
         """
 
-        # Find organism filenames
-        org_files = glob.glob(fns)
+        # Find organism filenames, can be a list of patterns
+        org_files = [fn for pattern in fns for fn in glob.glob(pattern)]
 
         # Initialize list of dictionaries to hold all organism parameters
         # Each dictionary contains parameters for a single species
-        org_dict_list = []
+        organism_list = []
         for org_file in org_files:
             # Initialize temporary dict to store species parameters
-            org_dict = {}
+            organism_dict = {}
 
             # Parameters that must be str
             param_str = ['species_name',
                          'movement_type',
                          'reproduction_type',
                          'drinking_type',
+                         'action_type',
                          'eating_type']
 
             # Parameters that must be int
             param_int = ['population_size',
                          'dna_length',
-                         'max_age',
-                           'max_time_without_food',
-                           'max_time_without_water',
-                           'mutation_rate',
-                           'food_capacity',
-                           'food_initial',
-                           'food_metabolism',
-                           'food_intake',
-                           'water_capacity',
-                           'water_initial',
-                           'water_metabolism',
-                           'water_intake']
+                         'max_age']
 
             # Parameters that must be int or 'None'
-            param_int_none = []
+            param_int_none = ['max_time_without_food',
+                                'max_time_without_water',
+                                'mutation_rate',
+                                'food_capacity',
+                                'food_initial',
+                                'food_metabolism',
+                                'food_intake',
+                                'water_capacity',
+                                'water_initial',
+                                'water_metabolism',
+                                'water_intake']
 
             # Parameters that must be float
-            param_float = ['proportion_M',
-                           'proportion_F',
-                           'proportion_A',
-                           'proportion_H']
+            param_float = ['proportion_m',
+                           'proportion_f',
+                           'proportion_a',
+                           'proportion_h']
 
             # Parameters that must be bool
             param_bool = ['can_mutate']
@@ -224,12 +222,15 @@ class ParameterIO():
                     elif key in param_bool:
                         val = (val == 'True')
                     else:
+                        print(key, val)
                         raise NameError('Key is not a valid parameter')
                     # ensure 'None' parameters are set to None
                     if val == 'None':
                         val = None
-                    org_dict[key] = val
+                    organism_dict[key] = val
 
-            org_dict_list.append(org_dict)
+            # Generate all organisms
+            for i in range(organism_dict['population_size']):
+                organism_list.append(Organism(organism_dict))
 
-            return org_dict_list
+            return organism_list

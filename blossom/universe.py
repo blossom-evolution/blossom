@@ -56,7 +56,7 @@ class Universe(object):
     def initialize_world(self, world_fn=None, world_param_fn=None):
         # world = world.World()
         if world_fn is not None:
-            world = DIO.load_world_dataset(world_fn, fields.world_field_names.keys())
+            world = DIO.load_world_dataset(world_fn)
             # TODO: set up entire world based on world records
         elif world_param_fn is not None:
             world = PIO.load_world_parameters(world_param_fn)
@@ -70,8 +70,7 @@ class Universe(object):
         # organisms is a list of Organism objects
         # organisms = []
         if organism_fns is not None:
-            organism_list = DIO.load_organism_dataset(organism_fns,
-                                            fields.organism_field_names.keys())
+            organism_list = DIO.load_organism_dataset(organism_fns)
             # TODO: set up all organisms based on organism records
         elif species_param_fns is not None:
             organism_list = PIO.load_species_parameters(species_param_fns)
@@ -86,7 +85,7 @@ class Universe(object):
         for organism in self.organism_list:
             self.intent_list.append(organism.act(self.organism_list, self.world))
         # Somehow parse whether the intent_list makes sense, otherwise revise it
-        print(self.intent_list)
+
         self.current_time += 1
         self.organism_list = self.intent_list
         DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)

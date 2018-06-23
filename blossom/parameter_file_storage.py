@@ -64,7 +64,7 @@ class DatasetIO():
             reconstructed from the saved dataset.
         """
         with open(fn, 'r') as f:
-            organism_dict_list = json.load(fn)
+            organism_dict_list = json.load(f)
         organism_list = [Organism(organism_dict) for organism_dict in organism_dict_list]
         return organism_list
 
@@ -78,7 +78,6 @@ class DatasetIO():
             field_names (list): Organism attributes to write (per organism)
                 to file.
         """
-        print(organism_list)
         organism_dict_list = [vars(organism) for organism in organism_list]
         with open(fn, 'w') as f:
             json.dump(organism_dict_list, f, indent=2)

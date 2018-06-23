@@ -60,6 +60,7 @@ class Universe(object):
             # TODO: set up entire world based on world records
         elif world_param_fn is not None:
             world = PIO.load_world_parameters(world_param_fn)
+            DIO.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
             # TODO: set up entire world based on parameter file
         else:
             sys.exit('No files specified for initialization!')
@@ -74,21 +75,23 @@ class Universe(object):
             # TODO: set up all organisms based on organism records
         elif species_param_fns is not None:
             organism_list = PIO.load_species_parameters(species_param_fns)
+            DIO.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
             # TODO: set up all organisms based on species specifications
         else:
             sys.exit('No files specified for initialization!')
         return organism_list
 
     def step(self):
-        DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
-        DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
-
-        self.organism_list = self.intent_list
         self.intent_list = []
         for organism in self.organism_list:
             self.intent_list.append(organism.act(self.organism_list, self.world))
         # Somehow parse whether the intent_list makes sense, otherwise revise it
+        print(self.intent_list)
         self.current_time += 1
+        self.organism_list = self.intent_list
+        DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+
 
 # the entire executable could just be written like this
 # and everything happens under the hood

@@ -78,6 +78,7 @@ class DatasetIO():
             field_names (list): Organism attributes to write (per organism)
                 to file.
         """
+        print(organism_list)
         organism_dict_list = [vars(organism) for organism in organism_list]
         with open(fn, 'w') as f:
             json.dump(organism_dict_list, f, indent=2)

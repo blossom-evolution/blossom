@@ -34,4 +34,4 @@ class Organism(object):
         """
         Call the appropriate action determined by action.act
         """
-        return globals()[Action.act(self, organism_list, world)](self, organism_list, world)
+        return getattr(Organism, str(Action.act(self, organism_list, world)))(self, organism_list, world)

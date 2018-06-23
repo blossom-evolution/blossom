@@ -9,3 +9,5 @@ import os
 sys.path.append(os.path.dirname(__file__))
 
 from universe import Universe
+from organism import Organism
+from world import World

@@ -1,5 +1,5 @@
 .. blossom documentation master file, created by
-   sphinx-quickstart on Mon Mar 26 14:59:41 2018.
+   sphinx-quickstart on Sat Jun 23 18:13:59 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -10,9 +10,7 @@ Welcome to blossom's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   run
-   loadenv
-   loadobj
+
 
 Indices and tables
 ==================

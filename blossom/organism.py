@@ -19,8 +19,12 @@ class Organism(object):
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
-    def clone(self):
-        return Organism(vars(self))
+    @classmethod
+    def clone(cls, organism):
+        """
+        Makes a new Organism object identical to the current one.
+        """
+        return cls(vars(organism))
 
     def update_parameter(self, parameter, value, method='set'):
         """
@@ -81,7 +85,7 @@ class Organism(object):
         """
         # return getattr(Organism, Action.act(self, organism_list, world))(self, organism_list, world)
         action_name = getattr(action, self.action_type)(self, organism_list, world)
-        return getattr(Organism, action_name)(self, organism_list, world)
+        return getattr(self, action_name)(organism_list, world)
 
     def living(self):
         """
@@ -101,7 +105,7 @@ class Organism(object):
         Step through organism actions over one time unit
         """
         print(self.organism_id, self.living(), self.age)
-        organism = self.clone().update_life(organism_list, world)
+        organism = self.clone(self).update_life(organism_list, world)
         if organism.living():
             return organism.act(organism_list, world)
         else:

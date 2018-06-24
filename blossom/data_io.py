@@ -2,7 +2,6 @@ import os
 import glob
 import configparser
 import json
-import numpy as np
 import random
 
 import fields
@@ -10,15 +9,12 @@ from world import World
 from organism import Organism
 
 
-class DatasetIO():
+class DatasetIO(object):
     """
     Load information from a certain dataset, e.g. to resume a simulation, and
     write world and organism data back to file.
     """
 
-    # returns list of dictionaries
-    # class method:
-    # @classmethod
     def load_world_dataset(fn):
         """
         Load dataset file from JSON.
@@ -47,9 +43,6 @@ class DatasetIO():
         with open(fn, 'w') as f:
             json.dump(vars(world), f, indent=2)
 
-    # returns list of dictionaries
-    # class method:
-    # @classmethod
     def load_organism_dataset(fn):
         """
         Load dataset file from JSON.
@@ -88,8 +81,6 @@ class ParameterIO():
     Load initial parameters from parameter files.
     """
 
-    # class method:
-    # @classmethod
     def load_world_parameters(fn):
         """
         Load world parameter files.
@@ -141,9 +132,6 @@ class ParameterIO():
 
         return World(world_dict)
 
-
-    # class method:
-    # @classmethod
     def load_species_parameters(fns, init_world):
         """
         Load all available species parameter files.

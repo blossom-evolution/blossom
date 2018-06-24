@@ -1,6 +1,3 @@
-glob
-errno
 uuid
-json
 numpy
 configparser

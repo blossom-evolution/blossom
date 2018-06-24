@@ -12,7 +12,7 @@ population_size = 2
 dna_length = 4
 
 # Maximum old age (int, or 'None')
-max_age = 20
+max_age = 15
 
 [Action Parameters]
 

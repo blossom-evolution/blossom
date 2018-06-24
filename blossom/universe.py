@@ -79,7 +79,7 @@ class Universe(object):
     def step(self):
         self.intent_list = []
         for organism in self.organism_list:
-            self.intent_list.append(organism.act(self.organism_list, self.world))
+            self.intent_list.append(organism.step(self.organism_list, self.world))
         # Somehow parse whether the intent_list makes sense, otherwise revise it
 
         self.current_time += 1

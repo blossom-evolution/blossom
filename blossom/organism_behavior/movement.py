@@ -5,8 +5,7 @@ def stationary(organism, organism_list, world):
     return organism
 
 def simple_random(organism, organism_list, world):
-    new_organism = organism
-    position = new_organism.position
+    position = organism.position
     size = world.world_size
 
     if world.dimensionality == 1:
@@ -18,10 +17,10 @@ def simple_random(organism, organism_list, world):
             x += 1
         else:
             pass
-        new_organism.position = [x]
+        organism.position = [x]
     elif world.dimensionality == 2:
         # TODO!!
         pass
     else:
         sys.exit('Invalid world dimensionality!')
-    return new_organism
+    return organism

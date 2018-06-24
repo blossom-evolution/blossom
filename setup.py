@@ -17,6 +17,11 @@ setuptools.setup(
         'Source': 'https://github.com/blossom-evolution/blossom'
     },
     packages=setuptools.find_packages(),
+    install_requires=[
+       'uuid',
+       'numpy',
+       'configparser'
+    ],
     classifiers=(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',

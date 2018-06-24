@@ -3,8 +3,8 @@ import os
 import glob
 import errno
 
-from parameter_file_storage import DatasetIO as DIO
-from parameter_file_storage import ParameterIO as PIO
+from data_io import DatasetIO as DIO
+from data_io import ParameterIO as PIO
 
 class Universe(object):
     """

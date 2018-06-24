@@ -3,8 +3,14 @@
 *.gif
 *.jp[e]g
 images/
+
+# Data
 old_files/
 scripts/datasets
+
+# Specific files
+sample_realtime_plot.py
+blossom_structure_brainstorming.txt
 
 # Other
 .DS_Store

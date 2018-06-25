@@ -104,7 +104,6 @@ class Organism(object):
         """
         Step through organism actions over one time unit
         """
-        print(self.organism_id, self.living(), self.age)
         organism = self.clone(self).update_life(organism_list, world)
         if organism.living():
             return organism.act(organism_list, world)

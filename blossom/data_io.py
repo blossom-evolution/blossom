@@ -8,7 +8,6 @@ import fields
 from world import World
 from organism import Organism
 
-
 class DatasetIO(object):
     """
     Load information from a certain dataset, e.g. to resume a simulation, and
@@ -223,7 +222,7 @@ class ParameterIO():
                 # Vary organism location randomly
                 position = []
                 for i in range(init_world.dimensionality):
-                    position.append(random.randrange(0,init_world.world_size[i]))
+                    position.append(random.randrange(0, init_world.world_size[i]))
                 organism_dict['position'] = position
 
                 # Add organism to organism list

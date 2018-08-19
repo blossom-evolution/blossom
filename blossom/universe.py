@@ -2,7 +2,9 @@ import sys
 import os
 import glob
 import errno
+import numpy as np
 
+import parse_intent
 from data_io import DatasetIO as DIO
 from data_io import ParameterIO as PIO
 
@@ -52,12 +54,12 @@ class Universe(object):
     def initialize_world(self):
         # world = world.World()
         if self.world_fn is not None:
+            # Set up entire world based on world records
             world = DIO.load_world_dataset(self.world_fn)
-            # TODO: set up entire world based on world records
         elif self.world_param_fn is not None:
+            # Set up entire world based on parameter file
             world = PIO.load_world_parameters(self.world_param_fn)
             DIO.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
-            # TODO: set up entire world based on parameter file
         else:
             sys.exit('No files specified for initialization!')
         return world
@@ -66,12 +68,12 @@ class Universe(object):
         # organisms is a list of Organism objects
         # organisms = []
         if self.organism_fns is not None:
+            # Set up all organisms based on organism records
             organism_list = DIO.load_organism_dataset(self.organism_fns)
-            # TODO: set up all organisms based on organism records
         elif self.species_param_fns is not None:
+            # Set up all organisms based on species specifications
             organism_list = PIO.load_species_parameters(self.species_param_fns, self.world)
             DIO.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
-            # TODO: set up all organisms based on species specifications
         else:
             sys.exit('No files specified for initialization!')
         return organism_list
@@ -79,11 +81,12 @@ class Universe(object):
     def step(self):
         self.intent_list = []
         for organism in self.organism_list:
-            self.intent_list.append(organism.step(self.organism_list, self.world))
+            for new_organism in organism.step(self.organism_list, self.world):
+                self.intent_list.append(new_organism)
         # Somehow parse whether the intent_list makes sense, otherwise revise it
 
         self.current_time += 1
-        self.organism_list = self.intent_list
+        self.organism_list = parse_intent.parse(self.intent_list, self.organism_list)
         DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
         DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 

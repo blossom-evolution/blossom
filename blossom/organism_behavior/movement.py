@@ -2,25 +2,39 @@ import sys
 import random
 
 def stationary(organism, organism_list, world):
-    return organism
+    return [organism]
 
 def simple_random(organism, organism_list, world):
     position = organism.position
     size = world.world_size
 
     if world.dimensionality == 1:
-        x = position[0]
-        choice = random.randint(0,2)
+        [x] = position
+        choice = random.randint(0, 2)
         if choice == 0 and x != 0:
             x -= 1
-        elif choice == 1 and x != size[0]:
+        elif choice == 1 and x != size[0] - 1:
             x += 1
         else:
             pass
         organism.position = [x]
     elif world.dimensionality == 2:
-        # TODO!!
-        pass
+        [x, y] = position
+        x_choice = random.randint(0, 2)
+        y_choice = random.randint(0, 2)
+        if x_choice == 0 and x != 0:
+            x -= 1
+        elif x_choice == 1 and x != size[0] - 1:
+            x += 1
+        else:
+            pass
+        if y_choice == 0 and y != 0:
+            y -= 1
+        elif y_choice == 1 and y != size[1] - 1:
+            y += 1
+        else:
+            pass
+        organism.position = [x, y]
     else:
         sys.exit('Invalid world dimensionality!')
-    return organism
+    return [organism]

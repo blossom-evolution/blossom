@@ -1,7 +1,6 @@
 import uuid
 
 import fields
-# from organism_behavior import Movement, Reproduction, Drinking, Eating, Action
 from organism_behavior import movement, reproduction, drinking, eating, action
 
 class Organism(object):
@@ -15,7 +14,7 @@ class Organism(object):
         for (prop, default) in fields.organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
 
-        # Set unique id
+        # Set unique id for organism
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
@@ -91,21 +90,29 @@ class Organism(object):
         """
         Checks whether organism is still alive
         """
-        if self.age > self.max_age:
+        if self.age > self.max_age or self.alive == False:
             return False
         return True
 
-    def update_life(self, organism_list, world):
-        if self.living():
-            return self.update_parameter('age', 1, 'add')
-        return self
+    def update_age(self, organism_list, world):
+        return self.update_parameter('age', 1, 'add')
 
     def step(self, organism_list, world):
         """
-        Step through organism actions over one time unit
+        Step through organism actions over one time unit.
+
+        Returns a list of organisms that the action produced (either new or
+        altered organisms)
         """
-        organism = self.clone(self).update_life(organism_list, world)
+        organism = self.clone(self).update_age(organism_list, world)
         if organism.living():
+            # Keep acting if alive
             return organism.act(organism_list, world)
+        elif self.alive == True:
+            # If living status hasn't been updated, update it
+            dead_organism = organism.update_parameter('alive', False)
+            return [dead_organism.update_parameter('age_at_death', organism.age)]
         else:
-            return organism.update_parameter('alive', False, 'set')
+            # Organism status already set to dead, so return organism
+            # (with 'age' incremented)
+            return [organism]

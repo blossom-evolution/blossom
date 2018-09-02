@@ -8,7 +8,7 @@ def simple_random(organism, organism_list, world):
     position = organism.position
     size = world.world_size
 
-    if world.dimensionality == 1:
+    if len(size) == 1:
         [x] = position
         choice = random.randint(0, 2)
         if choice == 0 and x != 0:

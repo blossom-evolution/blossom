@@ -18,6 +18,11 @@ class Organism(object):
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
+        if self.drinking_type is not None:
+            self.water_current = self.water_initial
+        if self.eating_type is not None:
+            self.food_current = self.food_initial
+
     @classmethod
     def clone(cls, organism):
         """
@@ -55,14 +60,12 @@ class Organism(object):
         else:
             return getattr(movement, self.movement_type)(self, organism_list, world)
 
-
     def reproduce(self, organism_list, world):
         # return Reproduction.reproduce(self, organism_list, world)
         if self.reproduction_type is None:
             return self
         else:
             return getattr(reproduction, self.reproduction_type)(self, organism_list, world)
-
 
     def drink(self, organism_list, world):
         # return Drinking.drink(self, organism_list, world)
@@ -90,12 +93,41 @@ class Organism(object):
         """
         Checks whether organism is still alive
         """
-        if self.age > self.max_age or self.alive == False:
+        if self.alive == False:
+            return False
+        if self.age > self.max_age:
+            return False
+        if self.drinking_type is not None and self.time_without_water > self.max_time_without_water:
+            return False
+        if self.eating_type is not None and self.time_without_food > self.max_time_without_food:
             return False
         return True
 
+    def update_state(self, organism_list, world):
+        """
+        Update organism's internal state (including age, water, food)
+        """
+        organism = self.update_age(organism_list, world)
+        organism = organism.update_water(organism_list, world)
+        organism = organism.update_food(organism_list, world)
+        return organism
+
     def update_age(self, organism_list, world):
         return self.update_parameter('age', 1, 'add')
+
+    def update_water(self, organism_list, world):
+        self.water_current -= self.water_metabolism
+        if self.water_current > self.water_capacity:
+            self.water_current = self.water_capacity
+        elif self.water_current <= 0:
+            self.water_current = 0
+            self.time_without_water += 1
+        elif self.time_without_water > 0:
+            self.time_without_water = 0
+        return self
+
+    def update_food(self, organism_list, world):
+        return -1
 
     def step(self, organism_list, world):
         """
@@ -107,7 +139,9 @@ class Organism(object):
         organism = self.clone(self).update_age(organism_list, world)
         if organism.living():
             # Keep acting if alive
-            return organism.act(organism_list, world)
+            test = [org.update_water(organism_list, world) \
+                    for org in organism.act(organism_list, world)]
+            return test
         elif self.alive == True:
             # If living status hasn't been updated, update it
             dead_organism = organism.update_parameter('alive', False)

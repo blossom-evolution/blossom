@@ -3,6 +3,7 @@ import glob
 import configparser
 import json
 import random
+import numpy as np
 
 import fields
 from world import World
@@ -108,9 +109,9 @@ class ParameterIO():
         config_world = configparser.ConfigParser()
         config_world.read(env_file)
 
-        # dimensionality: int
-        dimensionality = int(config_world.get('Overall Parameters', 'dimensionality'))
-        world_dict['dimensionality'] = dimensionality
+        # # dimensionality: int
+        # dimensionality = int(config_world.get('Overall Parameters', 'dimensionality'))
+        # world_dict['dimensionality'] = dimensionality
 
         # world_size: space delimited ints in agreement with dimensionality, or 'None'
         # example: world_size = 10 10
@@ -125,9 +126,14 @@ class ParameterIO():
         # environment_filename: str, or 'None'
         environment_filename = config_world.get('Overall Parameters',
                                                 'environment_filename')
-        if environment_filename == 'None':
-            environment_filename = None
-        world_dict['environment_filename'] = environment_filename
+        if environment_filename != 'None':
+            with open(environment_filename, 'r') as f:
+                initial_environment_dict = json.load(f)
+
+        world_dict['water'] = initial_environment_dict['water']
+        world_dict['food'] = initial_environment_dict['food']
+        world_dict['obstacles'] = initial_environment_dict['obstacles']
+        # world_dict['initial_environment_dict'] = initial_environment_dict
 
         return World(world_dict)
 

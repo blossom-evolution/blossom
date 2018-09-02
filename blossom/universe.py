@@ -83,11 +83,13 @@ class Universe(object):
         for organism in self.organism_list:
             for new_organism in organism.step(self.organism_list, self.world):
                 self.intent_list.append(new_organism)
-        # Somehow parse whether the intent_list makes sense, otherwise revise it
 
         self.current_time += 1
+        # Parse intent list and ensure it is valid
         self.organism_list = parse_intent.parse(self.intent_list, self.organism_list)
         DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+
+        # self.world = None
         DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 
 

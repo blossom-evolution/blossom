@@ -2,12 +2,12 @@
 
 [Overall Parameters]
 
-# Dimensionality (int)
-dimensionality = 2
+# # Dimensionality (int)
+# dimensionality = 2
 
 # Size of world (ints with correct dimensionality, or 'None')
 # example: world_size = 10 10
-world_size = 16 16
+world_size = 10
 
 # Filename for environment specification (str, or 'None')
-environment_filename = None
+environment_filename = environment.json

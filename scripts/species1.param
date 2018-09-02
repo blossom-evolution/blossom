@@ -6,18 +6,18 @@
 species_name = species1
 
 # Number of organisms (int)
-population_size = 16
+population_size = 4
 
 # Initial DNA length (int)
 dna_length = 4
 
 # Maximum old age (int, or 'None')
-max_age = 256
+max_age = 20
 
 [Action Parameters]
 
 # Action specification (str)
-action_type = move_only
+action_type = move_reproduce_drink
 
 [Movement Parameters]
 
@@ -38,22 +38,22 @@ proportion_h = 0.0
 [Drinking Parameters]
 
 # Water intake method (str, or 'None')
-drinking_type = None
+drinking_type = constant_drink
 
 # Water capacity (int, or 'None')
-water_capacity = None
+water_capacity = 10
 
 # Initial water level (int, or 'None')
-water_initial = None
+water_initial = 5
 
 # Water metabolism, in water per integer timestep (int, or 'None')
-water_metabolism = None
+water_metabolism = 1
 
 # Water intake, in food per integer timestep (int, or 'None')
-water_intake = None
+water_intake = 2
 
 # Lifetime without water (int, or 'None')
-max_time_without_water = None
+max_time_without_water = 3
 
 [Eating Parameters]
 

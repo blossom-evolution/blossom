@@ -4,7 +4,10 @@ Fields + defaults
 
 world_field_names = {'dimensionality': 1,
                      'world_size': [10],
-                     'environment_filename': None}
+                     'initial_environment_dict': None,
+                     'water': None,
+                     'food': None,
+                     'obstacles': None}
 
 specific_organism_field_names = {'organism_id': None,
                         'dna': '0000',
@@ -14,7 +17,9 @@ specific_organism_field_names = {'organism_id': None,
                         'position': [0],
                         'sex': None,
                         'water_current': None,
-                        'food_current': None}
+                        'time_without_water': 0,
+                        'food_current': None,
+                        'time_without_food': 0}
 
 species_field_names = {'species_name': 'species1',
                         'movement_type': 'stationary',

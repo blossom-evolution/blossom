@@ -6,10 +6,10 @@ import blossom
 
 WORLD_FN = None
 ORGANISM_FNS = None
-WORLD_PARAM_FN = 'world.env'
-SPECIES_PARAM_FNS = ['species1.org']
+WORLD_PARAM_FN = 'world.param'
+SPECIES_PARAM_FNS = ['species1.param']
 START_TIME = 0
-END_TIME = 256
+END_TIME = 10
 
 universe = blossom.Universe(world_fn=WORLD_FN,
                             organism_fns=ORGANISM_FNS,
@@ -17,7 +17,7 @@ universe = blossom.Universe(world_fn=WORLD_FN,
                             species_param_fns=SPECIES_PARAM_FNS,
                             current_time=START_TIME,
                             end_time=END_TIME,
-                            dataset_dir='datasets/test_replication/')
+                            dataset_dir='datasets/test_drinking/')
 while universe.current_time < universe.end_time:
     print('t = %s: %s organisms' % (universe.current_time, len(universe.organism_list)))
     universe.step()

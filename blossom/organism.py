@@ -22,7 +22,7 @@ class Organism(object):
             self.water_current = self.water_initial
         if self.food_current is None:
             self.food_current = self.food_initial
-
+            
     @classmethod
     def clone(cls, organism):
         """

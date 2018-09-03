@@ -10,6 +10,13 @@ def move_and_reproduce(organism, organism_list, world):
     else:
         return 'move'
 
+def move_and_drink(organism, organism_list, world):
+    choice = random.randint(0, 8)
+    if choice < 4:
+        return 'drink'
+    else:
+        return 'move'
+
 def move_reproduce_drink(organism, organism_list, world):
     choice = random.randint(0, 8)
     if choice == 0:

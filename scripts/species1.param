@@ -6,7 +6,7 @@
 species_name = species1
 
 # Number of organisms (int)
-population_size = 4
+population_size = 20
 
 # Initial DNA length (int)
 dna_length = 4
@@ -41,16 +41,16 @@ proportion_h = 0.0
 drinking_type = constant_drink
 
 # Water capacity (int, or 'None')
-water_capacity = 6
+water_capacity = 20
 
 # Initial water level (int, or 'None')
-water_initial = 5
+water_initial = 10
 
 # Water metabolism, in water per integer timestep (int, or 'None')
 water_metabolism = 1
 
 # Water intake, in food per integer timestep (int, or 'None')
-water_intake = 2
+water_intake = 5
 
 # Lifetime without water (int, or 'None')
 max_time_without_water = 3

@@ -12,7 +12,7 @@ population_size = 4
 dna_length = 4
 
 # Maximum old age (int, or 'None')
-max_age = 20
+max_age = 10
 
 [Action Parameters]
 
@@ -41,7 +41,7 @@ proportion_h = 0.0
 drinking_type = constant_drink
 
 # Water capacity (int, or 'None')
-water_capacity = 10
+water_capacity = 6
 
 # Initial water level (int, or 'None')
 water_initial = 5

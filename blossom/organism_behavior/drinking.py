@@ -7,7 +7,6 @@ def constant_drink(organism, organism_list, world):
 
     if len(size) == 1:
         if world.water[organism.position[0]] > 0:
-
             # Actually intake water
             organism.water_current += organism.water_intake
 

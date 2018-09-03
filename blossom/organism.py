@@ -18,9 +18,9 @@ class Organism(object):
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
-        if self.drinking_type is not None:
+        if self.water_current is None:
             self.water_current = self.water_initial
-        if self.eating_type is not None:
+        if self.food_current is None:
             self.food_current = self.food_initial
 
     @classmethod
@@ -103,6 +103,12 @@ class Organism(object):
             return False
         return True
 
+    def death_old_age(self):
+        return self.age > self.max_age
+
+    def death_thirst(self):
+        return self.drinking_type is not None and self.time_without_water > self.max_time_without_water
+
     def update_state(self, organism_list, world):
         """
         Update organism's internal state (including age, water, food)
@@ -117,6 +123,7 @@ class Organism(object):
 
     def update_water(self, organism_list, world):
         self.water_current -= self.water_metabolism
+
         if self.water_current > self.water_capacity:
             self.water_current = self.water_capacity
         elif self.water_current <= 0:
@@ -127,7 +134,14 @@ class Organism(object):
         return self
 
     def update_food(self, organism_list, world):
-        return -1
+        return self
+
+    def die(self, cause):
+        # cause is string describing cause of death
+        self.update_parameter('alive', False)
+        self.update_parameter('age_at_death', self.age)
+        self.update_parameter('cause_of_death', cause)
+        return self
 
     def step(self, organism_list, world):
         """
@@ -137,15 +151,18 @@ class Organism(object):
         altered organisms)
         """
         organism = self.clone(self).update_age(organism_list, world)
-        if organism.living():
+        if organism.alive and not organism.death_old_age():
             # Keep acting if alive
-            test = [org.update_water(organism_list, world) \
-                    for org in organism.act(organism_list, world)]
-            return test
-        elif self.alive == True:
+            affected_organisms = organism.act(organism_list, world)
+            for org in affected_organisms:
+                org = org.update_water(organism_list, world)
+                org = org.update_food(organism_list, world)
+                if org.death_thirst():
+                    org = org.die('thirst')
+            return affected_organisms
+        elif organism.alive:
             # If living status hasn't been updated, update it
-            dead_organism = organism.update_parameter('alive', False)
-            return [dead_organism.update_parameter('age_at_death', organism.age)]
+            return [organism.die('old_age')]
         else:
             # Organism status already set to dead, so return organism
             # (with 'age' incremented)

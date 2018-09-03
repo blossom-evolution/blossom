@@ -9,7 +9,7 @@ ORGANISM_FNS = None
 WORLD_PARAM_FN = 'world.param'
 SPECIES_PARAM_FNS = ['species1.param']
 START_TIME = 0
-END_TIME = 10
+END_TIME = 20
 
 universe = blossom.Universe(world_fn=WORLD_FN,
                             organism_fns=ORGANISM_FNS,

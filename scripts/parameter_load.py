@@ -17,7 +17,7 @@ universe = blossom.Universe(world_fn=WORLD_FN,
                             species_param_fns=SPECIES_PARAM_FNS,
                             current_time=START_TIME,
                             end_time=END_TIME,
-                            dataset_dir='datasets/test_drinking/')
+                            dataset_dir='datasets/test_general/')
 while universe.current_time < universe.end_time:
     print('t = %s: %s organisms' % (universe.current_time, len(universe.organism_list)))
     universe.step()

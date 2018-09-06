@@ -18,7 +18,7 @@ def simple_random(organism, organism_list, world):
         else:
             pass
         organism.position = [x]
-    elif world.dimensionality == 2:
+    elif len(size) == 2:
         [x, y] = position
         x_choice = random.randint(0, 2)
         y_choice = random.randint(0, 2)

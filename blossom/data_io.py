@@ -72,7 +72,12 @@ class DatasetIO(object):
             field_names (list): Organism attributes to write (per organism)
                 to file.
         """
-        organism_dict_list = [vars(organism) for organism in organism_list]
+        organism_dict_list = []
+        for organism in organism_list:
+            organism_dict = vars(organism)
+            # Ensure we're not trying to serialize the loaded modules themselves
+            del organism_dict['custom_modules']
+            organism_dict_list.append(organism_dict)
         with open(fn, 'w') as f:
             json.dump(organism_dict_list, f, indent=2)
 
@@ -137,7 +142,7 @@ class ParameterIO():
 
         return World(world_dict)
 
-    def load_species_parameters(fns, init_world):
+    def load_species_parameters(fns, init_world, custom_methods_fns):
         """
         Load all available species parameter files.
         filenames can be a single string or a list of strings.
@@ -222,6 +227,9 @@ class ParameterIO():
                     if val == 'None':
                         val = None
                     organism_dict[key] = val
+
+            # Track custom method file paths
+            organism_dict['custom_methods_fns'] = custom_methods_fns
 
             # Generate all organisms
             for i in range(organism_dict['population_size']):

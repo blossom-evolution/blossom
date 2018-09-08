@@ -5,14 +5,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__),'..'))
 import blossom
 
 WORLD_FN = 'datasets/world_ds0010.txt'
-ORGANISM_FNS = 'datasets/organisms_ds0010.txt'
+ORGANISMS_FN = 'datasets/organisms_ds0010.txt'
 WORLD_PARAM_FN = None
 SPECIES_PARAM_FNS = None
 START_TIME = 10
 END_TIME = 20
 
 universe = blossom.Universe(world_fn=WORLD_FN,
-                            organism_fns=ORGANISM_FNS,
+                            organisms_fn=ORGANISMS_FN,
                             world_param_fn=WORLD_PARAM_FN,
                             species_param_fns=SPECIES_PARAM_FNS,
                             current_time=START_TIME,

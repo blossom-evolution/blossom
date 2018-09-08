@@ -1,10 +1,11 @@
 import uuid
+import imp
 import sys
 
 import fields
 from organism_behavior import movement, reproduction, drinking, eating, action
 
-def force_into_list(x):
+def cast_to_list(x):
     if type(x) is list:
         return x
     else:
@@ -25,11 +26,19 @@ class Organism(object):
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
-        if self.water_current is None:
+        if self.drinking_type is not None and self.water_current is None:
             self.water_current = self.water_initial
 
-        if self.food_current is None:
+        if self.eating_type is not None and self.food_current is None:
             self.food_current = self.food_initial
+
+        # Import custom modules / paths
+        if self.custom_methods_fns is not None:
+            self.custom_modules = []
+            for i, path in enumerate(cast_to_list(self.custom_methods_fns)):
+                temp_module = imp.load_source('%s' % i, path)
+                self.custom_modules.append(temp_module)
+
 
     @classmethod
     def clone(cls, organism):
@@ -65,37 +74,55 @@ class Organism(object):
         # return Movement.move(self, organism_list, world)
         if self.movement_type is None:
             sys.exit('No movement type defined!')
-        else:
-            return getattr(movement, self.movement_type)(self, organism_list, world)
+        elif self.custom_methods_fns is not None:
+            for custom_module in self.custom_modules:
+                if hasattr(custom_module, self.movement_type):
+                    return getattr(custom_module, self.movement_type)(self, organism_list, world)
+        return getattr(movement, self.movement_type)(self, organism_list, world)
 
     def reproduce(self, organism_list, world):
         # return Reproduction.reproduce(self, organism_list, world)
         if self.reproduction_type is None:
             sys.exit('No reproduction type defined!')
-        else:
-            return getattr(reproduction, self.reproduction_type)(self, organism_list, world)
+        elif self.custom_methods_fns is not None:
+            for custom_module in self.custom_modules:
+                if hasattr(custom_module, self.reproduction_type):
+                    return getattr(custom_module, self.reproduction_type)(self, organism_list, world)
+        return getattr(reproduction, self.reproduction_type)(self, organism_list, world)
 
     def drink(self, organism_list, world):
         # return Drinking.drink(self, organism_list, world)
         if self.drinking_type is None:
             sys.exit('No drinking type defined!')
-        else:
-            return getattr(drinking, self.drinking_type)(self, organism_list, world)
+        elif self.custom_methods_fns is not None:
+            for custom_module in self.custom_modules:
+                if hasattr(custom_module, self.drinking_type):
+                    return getattr(custom_module, self.drinking_type)(self, organism_list, world)
+        return getattr(drinking, self.drinking_type)(self, organism_list, world)
 
     def eat(self, organism_list, world):
         # return Eating.eat(self, organism_list, world)
         if self.eating_type is None:
             sys.exit('No eating type defined!')
-        else:
-            return getattr(eating, self.eating_type)(self, organism_list, world)
+        elif self.custom_methods_fns is not None:
+            for custom_module in self.custom_modules:
+                if hasattr(custom_module, self.eating_type):
+                    return getattr(custom_module, self.eating_type)(self, organism_list, world)
+        return getattr(eating, self.eating_type)(self, organism_list, world)
 
     def act(self, organism_list, world):
         """
         Call the appropriate action determined by action.act
         """
         # return getattr(Organism, Action.act(self, organism_list, world))(self, organism_list, world)
-        action_name = getattr(action, self.action_type)(self, organism_list, world)
-        return force_into_list(getattr(self, action_name)(organism_list, world))
+        action_name = None
+        if self.custom_methods_fns is not None:
+            for custom_module in self.custom_modules:
+                if hasattr(custom_module, self.action_type):
+                    action_name = getattr(custom_module, self.action_type)(self, organism_list, world)
+        if action_name is None:
+            action_name = getattr(action, self.action_type)(self, organism_list, world)
+        return cast_to_list(getattr(self, action_name)(organism_list, world))
 
     def update_age(self, organism_list, world):
         return self.update_parameter('age', 1, 'add')

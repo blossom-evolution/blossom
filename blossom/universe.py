@@ -15,18 +15,20 @@ class Universe(object):
 
     def __init__(self,
                  world_fn=None,
-                 organism_fns=None,
+                 organisms_fn=None,
                  world_param_fn=None,
                  species_param_fns=None,
+                 custom_methods_fns=None,
                  current_time=0,
                  end_time=10,
                  dataset_dir='datasets/',
                  pad_zeroes=4,
                  file_extension='.txt'):
+        self.world_fn = world_fn
+        self.organisms_fn = organisms_fn
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
-        self.world_fn = world_fn
-        self.organism_fns = organism_fns
+        self.custom_methods_fns = custom_methods_fns
 
         self.current_time = current_time
         self.end_time = end_time
@@ -40,7 +42,7 @@ class Universe(object):
             if e.errno != errno.EEXIST:
                 raise
         self.pad_zeroes = pad_zeroes
-        while (self.end_time - self.current_time) >= 10**self.pad_zeroes:
+        while (self.end_time - self.current_time) >= 10 ** self.pad_zeroes:
             self.pad_zeroes += 1
         self.file_extension = file_extension
 
@@ -67,12 +69,12 @@ class Universe(object):
     def initialize_organisms(self):
         # organisms is a list of Organism objects
         # organisms = []
-        if self.organism_fns is not None:
+        if self.organisms_fn is not None:
             # Set up all organisms based on organism records
-            organism_list = DIO.load_organism_dataset(self.organism_fns)
+            organism_list = DIO.load_organism_dataset(self.organisms_fn)
         elif self.species_param_fns is not None:
             # Set up all organisms based on species specifications
-            organism_list = PIO.load_species_parameters(self.species_param_fns, self.world)
+            organism_list = PIO.load_species_parameters(self.species_param_fns, self.world, self.custom_methods_fns)
             DIO.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
         else:
             sys.exit('No files specified for initialization!')

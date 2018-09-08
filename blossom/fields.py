@@ -17,6 +17,8 @@ specific_organism_field_names = {'organism_id': None,
                         'cause_of_death': None,
                         'position': [0],
                         'sex': None,
+                        'ancestry': [],
+                        'custom_methods_fns': None,
                         'water_current': None,
                         'time_without_water': 0,
                         'food_current': None,
@@ -42,4 +44,5 @@ species_field_names = {'species_name': 'species1',
                         'water_metabolism': None,
                         'water_intake': None}
 
+# Combine organism and species field names
 organism_field_names = dict(specific_organism_field_names, **species_field_names)

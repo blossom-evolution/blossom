@@ -5,16 +5,18 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import blossom
 
 WORLD_FN = None
-ORGANISM_FNS = None
+ORGANISMS_FN = None
 WORLD_PARAM_FN = 'world.param'
 SPECIES_PARAM_FNS = ['species1.param']
+CUSTOM_METHODS_FNS = ['sample_methods.py']
 START_TIME = 0
 END_TIME = 100
 
 universe = blossom.Universe(world_fn=WORLD_FN,
-                            organism_fns=ORGANISM_FNS,
+                            organisms_fn=ORGANISMS_FN,
                             world_param_fn=WORLD_PARAM_FN,
                             species_param_fns=SPECIES_PARAM_FNS,
+                            custom_methods_fns=CUSTOM_METHODS_FNS,
                             current_time=START_TIME,
                             end_time=END_TIME,
                             dataset_dir='datasets/test_general/')

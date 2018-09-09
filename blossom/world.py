@@ -12,7 +12,3 @@ class World(object):
         # Sets up defaults based on world parameters
         for (prop, default) in fields.world_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
-
-        # self.water = self.initial_environment_dict['water']
-        # self.food = self.initial_environment_dict['food']
-        # self.obstacles = self.initial_environment_dict['obstacles']

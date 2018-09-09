@@ -1,4 +1,5 @@
 import uuid
+import copy
 import imp
 import sys
 
@@ -45,7 +46,11 @@ class Organism(object):
         """
         Makes a new Organism object identical to the current one.
         """
-        return cls(vars(organism))
+        new_organism = cls(vars(organism))
+        # Use copy module to properly handle mutable lists
+        new_organism.ancestry = copy.copy(new_organism.ancestry)
+        new_organism.position = copy.copy(new_organism.position)
+        return new_organism
 
     def update_parameter(self, parameter, value, method='set'):
         """
@@ -65,6 +70,8 @@ class Organism(object):
             attribute += value
         elif method == 'subtract':
             attribute -= value
+        elif method == 'append':
+            attribute.append(value)
         else:
             sys.exit('Invalid update method!')
         setattr(self, parameter, attribute)

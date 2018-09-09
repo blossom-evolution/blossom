@@ -17,3 +17,4 @@ from fields import world_field_names, \
 from data_io import DatasetIO, ParameterIO
 
 import organism_behavior
+from world_generator import *

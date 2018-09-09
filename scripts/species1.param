@@ -6,7 +6,7 @@
 species_name = species1
 
 # Number of organisms (int)
-population_size = 20
+population_size = 1000
 
 # Initial DNA length (int)
 dna_length = 4
@@ -17,7 +17,7 @@ max_age = 10
 [Action Parameters]
 
 # Action specification (str)
-action_type = move_reproduce_drink
+action_type = fast_reproduce
 
 [Movement Parameters]
 
@@ -41,19 +41,19 @@ proportion_h = 0.0
 drinking_type = constant_drink
 
 # Water capacity (int, or 'None')
-water_capacity = 20
+water_capacity = 40
 
 # Initial water level (int, or 'None')
-water_initial = 10
+water_initial = 20
 
 # Water metabolism, in water per integer timestep (int, or 'None')
 water_metabolism = 1
 
 # Water intake, in food per integer timestep (int, or 'None')
-water_intake = 5
+water_intake = 2
 
 # Lifetime without water (int, or 'None')
-max_time_without_water = 3
+max_time_without_water = 2
 
 [Eating Parameters]
 

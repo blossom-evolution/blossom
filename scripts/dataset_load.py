@@ -8,8 +8,11 @@ WORLD_FN = 'datasets/world_ds0010.txt'
 ORGANISMS_FN = 'datasets/organisms_ds0010.txt'
 WORLD_PARAM_FN = None
 SPECIES_PARAM_FNS = None
-START_TIME = 10
-END_TIME = 20
+CUSTOM_METHODS_FNS = None
+DATASET_OUTPUT_DIR = 'datasets/test_general/'
+
+START_TIME = 0
+END_TIME = 100
 
 universe = blossom.Universe(world_fn=WORLD_FN,
                             organisms_fn=ORGANISMS_FN,

@@ -1,5 +1,9 @@
 """
-Fields + defaults
+Built-in dictionaries with world, species, and organism parameters (or fields).
+
+Both Organism and World objects are initialized based on these field dictionaries,
+and values are either populated from parameter files or take on the default
+values specified in this module.
 """
 
 world_field_names = {'dimensionality': 1,

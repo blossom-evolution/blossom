@@ -4,20 +4,14 @@ import imp
 import sys
 
 import fields
+from utils import cast_to_list
 from organism_behavior import movement, reproduction, drinking, eating, action
 
-def cast_to_list(x):
-    if type(x) is list:
-        return x
-    else:
-        return [x]
-
 class Organism(object):
-    """ Create a base organism structure for all species """
+    """ A basic organism structure for all species """
 
     def __init__(self, init_dict = {}):
-        """ Create a new organism with arguments based on the species
-            parameter files """
+        """ Create a new organism from a dict of parameters """
 
         # Sets up defaults based on organism parameters
         for (prop, default) in fields.organism_field_names.items():
@@ -54,14 +48,21 @@ class Organism(object):
 
     def update_parameter(self, parameter, value, method='set'):
         """
-        Update a specific parameter of the organism
-        Args:
-            parameter, string
-            value
-            method, string: 'set', 'add', 'subtract'
+        Update a specific parameter of the organism.
 
-        Return:
-            new Organism object with updated parameter
+        Parameters
+        ----------
+        parameter : string
+            Parameter to update.
+        value
+            Value with which to update.
+        method : string
+            Method types are: 'set', 'add', 'subtract'.
+
+        Returns
+        -------
+        self : Organism
+            Same organism object with updated parameter.
         """
         attribute = getattr(self, parameter)
         if method == 'set':

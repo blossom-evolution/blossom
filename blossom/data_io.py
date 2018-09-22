@@ -6,6 +6,7 @@ import random
 import numpy as np
 
 import fields
+from utils import cast_to_list
 from world import World
 from organism import Organism
 
@@ -20,13 +21,15 @@ class DatasetIO(object):
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
 
-        Args:
-            fn (str): Input filename of saved world dataset
-            field_names (list): World attributes to load from file
+        Parameters
+        ----------
+        fn : str
+            Input filename of saved world dataset.
 
-        Returns:
-            World: The return value. The reconstructed World object
-            from the saved dataset.
+        Returns
+        -------
+        world : World
+            World object reconstructed from the saved dataset.
         """
         with open(fn, 'r') as f:
             world_dict = json.load(f)
@@ -36,9 +39,12 @@ class DatasetIO(object):
         """
         Write world information from World object to file in JSON format.
 
-        Args:
-            fn (str): Output filename of saved world dataset
-            field_names (list): World attributes to write to file
+        Parameters
+        ----------
+        world : World
+            World attributes to write to file.
+        fn : str
+            Output filename of saved world dataset.
         """
         with open(fn, 'w') as f:
             json.dump(vars(world), f, indent=2)
@@ -48,14 +54,15 @@ class DatasetIO(object):
         Load dataset file from JSON.
         filenames can be a single string or a list of strings.
 
-        Args:
-            fn (str): Input filename of saved organism dataset
-            field_names (list): Organism attributes to load (per organism)
-                from file
+        Parameters
+        ----------
+        fn : str
+            Input filename of saved organism dataset.
 
-        Returns:
-            list: The return value. A list of Organism objects
-            reconstructed from the saved dataset.
+        Returns
+        -------
+        organism_list : list of Organisms
+            A list of Organism objects reconstructed from the saved dataset.
         """
         with open(fn, 'r') as f:
             organism_dict_list = json.load(f)
@@ -67,10 +74,12 @@ class DatasetIO(object):
         Write organism data from list of Organism objects to file in JSON
         format.
 
-        Args:
-            fn (str): Output filename of saved organism dataset
-            field_names (list): Organism attributes to write (per organism)
-                to file.
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of Organisms to write to file.
+        fn : str
+            Output filename of saved organism dataset.
         """
         organism_dict_list = []
         for organism in organism_list:
@@ -83,20 +92,23 @@ class DatasetIO(object):
 
 class ParameterIO():
     """
-    Load initial parameters from parameter files.
+    Loads information from parameter files and constructs world and
+    organism objects at the initial timestep.
     """
 
     def load_world_parameters(fn):
         """
-        Load world parameter files.
-        filenames can be a single string or a list of strings.
+        Load world parameter file and construct initial World object.
 
-        Args:
-            fn (str): Input filename of parameter file
+        Parameters
+        ----------
+        fn : str
+            Input filename of parameter file.
 
-        Returns:
-            World: The return value. A World object constructed
-            from the parameter file.
+        Returns
+        -------
+        world : World
+            World object constructed from the parameter file.
         """
 
         env_file = glob.glob(fn)
@@ -145,17 +157,29 @@ class ParameterIO():
     def load_species_parameters(fns, init_world, custom_methods_fns):
         """
         Load all available species parameter files.
-        filenames can be a single string or a list of strings.
 
-        Args:
-            fn (str): Input filename of parameter file
+        Parameters
+        ----------
+        fns : list of str
+            Input filenames of species parameter files. Different species get
+            different species parameter files, from which the individual organisms
+            are initialized.
+        init_world : World
+            Initial World instance for this Universe.
+        custom_methods_fns : list of str
+            List of external Python scripts containing custom organism
+            behaviors. :mod:`blossom` will search for methods within each
+            filename included here.
 
-        Returns:
-            list: The return value. A list of Organism objects constructed
-            from the parameter file.
+        Returns
+        -------
+        organism_list : list of Organisms
+            A list of Organism objects constructed from the parameter file.
+
         """
 
         # Find organism filenames, can be a list of patterns
+        fns = cast_to_list(fns)
         org_files = [fn for pattern in fns for fn in glob.glob(pattern)]
 
         # Initialize list of dictionaries to hold all organism parameters

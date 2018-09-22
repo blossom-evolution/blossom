@@ -3,14 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. |blossom| replace:: :mod:`blossom`
+
 Welcome to blossom's documentation!
 ===================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+|blossom| is a Python package for producing simulations of evolving organisms.
 
+Table of Contents
+=================
 
+   .. toctree::
+      :maxdepth: 1
+
+      install
+      cookbook
+      blossom
 
 Indices and tables
 ==================

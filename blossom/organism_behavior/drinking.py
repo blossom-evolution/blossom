@@ -2,6 +2,9 @@ import sys
 import random
 
 def constant_drink(organism, organism_list, world):
+    """
+    Intake constant amount of water from world if water is present.
+    """
     position = organism.position
     size = world.world_size
 

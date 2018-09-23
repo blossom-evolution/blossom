@@ -2,9 +2,16 @@ import sys
 import random
 
 def stationary(organism, organism_list, world):
+    """
+    Organism stays still.
+    """
     return [organism]
 
 def simple_random(organism, organism_list, world):
+    """
+    Move in random direction with equal probability. For 2D, organisms
+    don't walk diagonally.
+    """
     position = organism.position
     size = world.world_size
 

@@ -24,6 +24,35 @@ class Universe(object):
                  dataset_dir='datasets/',
                  pad_zeroes=4,
                  file_extension='.txt'):
+        """
+        Initialize universe based on either parameter files or saved datasets.
+
+        Parameters
+        ----------
+        world_fn : str
+            Filename of saved world dataset.
+        organisms_fn : str
+            Filename of saved organism dataset.
+        world_param_fn : str
+            Filename of world parameter file.
+        species_param_fns : list of str
+            List of filenames of species parameter files.
+        custom_methods_fns : list of str
+            List of filenames of external python scripts containing custom
+            behaviors.
+        current_time : int
+            Current time of simulation.
+        end_time : int
+            End time of simulation.
+        dataset_dir : str
+            Directory path for saving all world and organism datasets.
+        pad_zeroes : int
+            Number of zeroes to pad in dataset filenames.
+        file_extension : str
+            File extension for saving dataset files. Should generally be '.txt'
+            or '.json'.
+
+        """
         self.world_fn = world_fn
         self.organisms_fn = organisms_fn
         self.world_param_fn = world_param_fn
@@ -52,9 +81,17 @@ class Universe(object):
         self.organism_list = self.initialize_organisms()
         self.intent_list = []
 
-    # return World object
     def initialize_world(self):
-        # world = world.World()
+        """
+        Initialize the world of the universe from either a saved dataset
+        or from a parameter file (and subsequently writing the
+        initial time step to file).
+
+        Returns
+        -------
+        world : World
+            World at the beginning of the simulation.
+        """
         if self.world_fn is not None:
             # Set up entire world based on world records
             world = DIO.load_world_dataset(self.world_fn)
@@ -67,8 +104,16 @@ class Universe(object):
         return world
 
     def initialize_organisms(self):
-        # organisms is a list of Organism objects
-        # organisms = []
+        """
+        Initialize all organisms in the universe from either a saved dataset
+        or from parameter files (and subsequently writing the
+        initial time step to file).
+
+        Returns
+        -------
+        organism_list : list of Organisms
+            List of organisms at the beginning of the simulation.
+        """
         if self.organisms_fn is not None:
             # Set up all organisms based on organism records
             organism_list = DIO.load_organism_dataset(self.organisms_fn)
@@ -81,6 +126,11 @@ class Universe(object):
         return organism_list
 
     def step(self):
+        """
+        Steps through one time step, iterating over all organisms and
+        computing new organism states. Saves all organisms and the world
+        to file at the end of each step.
+        """
         self.intent_list = []
         for organism in self.organism_list:
             for new_organism in organism.step(self.organism_list, self.world):
@@ -89,15 +139,14 @@ class Universe(object):
         self.current_time += 1
         # Parse intent list and ensure it is valid
         self.organism_list = parse_intent.parse(self.intent_list, self.organism_list)
+
         DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 
+        # Potential changes to the world would go here
         DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 
 
-# the entire executable could just be written like this
-# and everything happens under the hood
-# well, we have to include parameter input options,
-# but these can go straight into Universe initialization
+# At its simplest, the entire executable could just be written like this
 if __name__ == '__main__':
     universe = Universe()
     while universe.current_time < universe.end_time:

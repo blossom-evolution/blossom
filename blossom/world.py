@@ -9,6 +9,9 @@ class World(object):
     """
 
     def __init__(self, init_dict={}):
-        # Sets up defaults based on world parameters
+        """
+        Create a new world from a dictary of parameters. The dictionary
+        is specified in blossom.fields.
+        """
         for (prop, default) in fields.world_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))

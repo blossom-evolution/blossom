@@ -8,11 +8,14 @@ from utils import cast_to_list
 from organism_behavior import movement, reproduction, drinking, eating, action
 
 class Organism(object):
-    """ A basic organism structure for all species """
-
+    """
+    A basic organism structure for all species.
+    """
     def __init__(self, init_dict = {}):
-        """ Create a new organism from a dict of parameters """
-
+        """
+        Create a new organism from a dictary of parameters. The dictionary
+        is specified in blossom.fields.
+        """
         # Sets up defaults based on organism parameters
         for (prop, default) in fields.organism_field_names.items():
             setattr(self, prop, init_dict.get(prop, default))
@@ -39,6 +42,16 @@ class Organism(object):
     def clone(cls, organism):
         """
         Makes a new Organism object identical to the current one.
+
+        Parameters
+        ----------
+        organism : Organism
+            Organism to copy.
+
+        Returns
+        -------
+        new_organism : Organism
+            Copied organism.
         """
         new_organism = cls(vars(organism))
         # Use copy module to properly handle mutable lists
@@ -79,7 +92,23 @@ class Organism(object):
         return self
 
     def move(self, organism_list, world):
-        # return Movement.move(self, organism_list, world)
+        """
+        Method for handling movement. Searches through custom methods and built-in
+        movement methods.
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : Organisms, or list of Organisms
+            Organism or list of organisms affected by this organism's movement.
+
+        """
         if self.movement_type is None:
             sys.exit('No movement type defined!')
         elif self.custom_methods_fns is not None:
@@ -89,7 +118,24 @@ class Organism(object):
         return getattr(movement, self.movement_type)(self, organism_list, world)
 
     def reproduce(self, organism_list, world):
-        # return Reproduction.reproduce(self, organism_list, world)
+        """
+        Method for handling reproduction. Searches through custom methods and built-in
+        reproduction methods.
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : Organisms, or list of Organisms
+            Organism or list of organisms affected by this organism's reproduction.
+            For example, this would include both parent and child organisms.
+
+        """
         if self.reproduction_type is None:
             sys.exit('No reproduction type defined!')
         elif self.custom_methods_fns is not None:
@@ -99,7 +145,23 @@ class Organism(object):
         return getattr(reproduction, self.reproduction_type)(self, organism_list, world)
 
     def drink(self, organism_list, world):
-        # return Drinking.drink(self, organism_list, world)
+        """
+        Method for handling drinking. Searches through custom methods and built-in
+        drinking methods.
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : Organisms, or list of Organisms
+            Organism or list of organisms affected by this organism's drinking.
+
+        """
         if self.drinking_type is None:
             sys.exit('No drinking type defined!')
         elif self.custom_methods_fns is not None:
@@ -109,7 +171,23 @@ class Organism(object):
         return getattr(drinking, self.drinking_type)(self, organism_list, world)
 
     def eat(self, organism_list, world):
-        # return Eating.eat(self, organism_list, world)
+        """
+        Method for handling eating. Searches through custom methods and built-in
+        eating methods.
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : Organisms, or list of Organisms
+            Organism or list of organisms affected by this organism's eating.
+
+        """
         if self.eating_type is None:
             sys.exit('No eating type defined!')
         elif self.custom_methods_fns is not None:
@@ -120,9 +198,25 @@ class Organism(object):
 
     def act(self, organism_list, world):
         """
-        Call the appropriate action determined by action.act
+        Method that decides and calls an action for the current timestep.
+        Searches through custom methods and built-in movement methods.
+        The action method specifically selects an action to take, from "move",
+        "reproduce", "drink", and "eat". Then the appropriate instance method
+        from this class is executed to yield the final list of affect organisms.
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : list of Organisms
+            Organism or list of organisms affected by this organism's action.
+
         """
-        # return getattr(Organism, Action.act(self, organism_list, world))(self, organism_list, world)
         action_name = None
         if self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
@@ -132,10 +226,20 @@ class Organism(object):
             action_name = getattr(action, self.action_type)(self, organism_list, world)
         return cast_to_list(getattr(self, action_name)(organism_list, world))
 
-    def update_age(self, organism_list, world):
+    def update_age(self):
+        """
+        Increments age by 1.
+        """
         return self.update_parameter('age', 1, 'add')
 
-    def update_water(self, organism_list, world):
+    def update_water(self):
+        """
+        Updates health parameters relevant to water consumption.
+
+        Decreases current water level based on metabolism, and increments
+        time without water accordingly. Note that organisms die of thirst if
+        this reaches the maximum time without water.
+        """
         self.water_current -= self.water_metabolism
 
         if self.water_current > self.water_capacity:
@@ -147,7 +251,14 @@ class Organism(object):
             self.time_without_water = 0
         return self
 
-    def update_food(self, organism_list, world):
+    def update_food(self):
+        """
+        Updates health parameters relevant to food consumption.
+
+        Decreases current food level based on metabolism, and increments
+        time without food accordingly. Note that organisms die of hunger if
+        this reaches the maximum time without food.
+        """
         self.food_current -= self.food_metabolism
 
         if self.food_current > self.food_capacity:
@@ -160,7 +271,20 @@ class Organism(object):
         return self
 
     def at_death(self, cause):
-        """Check various conditions for death"""
+        """
+        Check various conditions for death.
+
+        Parameters
+        ----------
+        cause : str
+            Potential cause of this organism's death.
+
+        Returns
+        -------
+        is_dead : bool
+            Returns True if organism is dead from the specified cause, False
+            otherwise.
+        """
         if cause == 'old_age':
             return self.age > self.max_age
         elif cause == 'thirst':
@@ -171,7 +295,19 @@ class Organism(object):
             sys.exit('Invalid cause!')
 
     def die(self, cause):
-        # cause is string describing cause of death
+        """
+        Method that "kills" organism.
+
+        Parameters
+        ----------
+        cause : str
+            Cause of this organism's death.
+
+        Returns
+        -------
+        dead_organism : Organism
+            New "dead" state of this organism.
+        """
         self.update_parameter('alive', False)
         self.update_parameter('age_at_death', self.age)
         self.update_parameter('cause_of_death', cause)
@@ -179,29 +315,47 @@ class Organism(object):
 
     def step(self, organism_list, world):
         """
-        Step through organism actions over one time unit.
+        Steps through one time step for this organism. Reflects changes based on
+        actions / behaviors and updates to health parameters.
 
         Returns a list of organisms that the action produced (either new or
-        altered organisms)
+        altered organisms).
+
+        Parameters
+        ----------
+        organism_list : list of Organisms
+            List of organisms, with which this organism may interact.
+        world : World
+            World, with which this organism may interact.
+
+        Returns
+        -------
+        affected_organisms : list of Organisms
+            Organism or list of organisms affected by this organism's actions
+            or health. This could be an updated version of this organism,
+            especially if the organism dies during the time step, but could
+            also be multiple other organisms affected by actions (i.e. children
+            from reproduction).
+
         """
         # Create new Organism object / reference and update age
-        organism = self.clone(self).update_age(organism_list, world)
+        organism = self.clone(self).update_age()
         if organism.alive:
             if not organism.at_death('old_age'):
                 # Keep acting if alive
                 affected_organisms = organism.act(organism_list, world)
                 for org in affected_organisms:
                     if org.drinking_type is not None:
-                        org.update_water(organism_list, world)
+                        org.update_water()
                         if org.at_death('thirst'):
                             org.die('thirst')
                     if org.eating_type is not None:
-                        org.update_food(organism_list, world)
+                        org.update_food()
                         if org.at_death('hunger'):
                             org.die('hunger')
                 return affected_organisms
             else:
-                # Here, organism is at death from old age
+                # This organism is at death from old age
                 return [organism.die('old_age')]
         else:
             # Organism status already set to dead, so return organism

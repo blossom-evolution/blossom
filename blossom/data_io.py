@@ -84,7 +84,7 @@ class DatasetIO(object):
         organism_dict_list = []
         for organism in organism_list:
             organism_dict = vars(organism)
-            # Ensure we're not trying to serialize the loaded modules themselves
+            # Make sure we're not serializing the loaded modules themselves
             del organism_dict['custom_modules']
             organism_dict_list.append(organism_dict)
         with open(fn, 'w') as f:

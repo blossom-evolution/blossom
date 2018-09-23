@@ -12,14 +12,6 @@ blossom\.organism\_behavior\.action module
     :undoc-members:
     :show-inheritance:
 
-blossom\.organism\_behavior\.behavior\_classes module
------------------------------------------------------
-
-.. automodule:: blossom.organism_behavior.behavior_classes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 blossom\.organism\_behavior\.drinking module
 --------------------------------------------
 

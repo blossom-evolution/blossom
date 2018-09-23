@@ -2,7 +2,11 @@ import uuid
 import math
 
 def pure_replication(organism, organism_list, world):
-    # Replace organism with two organism with similar parameters
+    """
+    Replace organism with two organism with similar parameters.
+    Essentially, only differences in parameters are organism id,
+    ancestry, age, and water / food levels.
+    """
 
     new_organism_list = []
 

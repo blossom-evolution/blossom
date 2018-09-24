@@ -12,10 +12,10 @@ Subpackages
 Submodules
 ----------
 
-blossom\.data\_io module
-------------------------
+blossom\.dataset\_io module
+---------------------------
 
-.. automodule:: blossom.data_io
+.. automodule:: blossom.dataset_io
     :members:
     :undoc-members:
     :show-inheritance:
@@ -32,6 +32,14 @@ blossom\.organism module
 ------------------------
 
 .. automodule:: blossom.organism
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+blossom\.parameter\_io module
+-----------------------------
+
+.. automodule:: blossom.parameter_io
     :members:
     :undoc-members:
     :show-inheritance:

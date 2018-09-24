@@ -5,8 +5,8 @@ import errno
 import numpy as np
 
 import parse_intent
-from data_io import DatasetIO as DIO
-from data_io import ParameterIO as PIO
+import dataset_io as dio
+import parameter_io as pio
 
 class Universe(object):
     """
@@ -94,11 +94,11 @@ class Universe(object):
         """
         if self.world_fn is not None:
             # Set up entire world based on world records
-            world = DIO.load_world_dataset(self.world_fn)
+            world = dio.load_world_dataset(self.world_fn)
         elif self.world_param_fn is not None:
             # Set up entire world based on parameter file
-            world = PIO.load_world_parameters(self.world_param_fn)
-            DIO.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+            world = pio.load_world_parameters(self.world_param_fn)
+            dio.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
         else:
             sys.exit('No files specified for initialization!')
         return world
@@ -116,11 +116,11 @@ class Universe(object):
         """
         if self.organisms_fn is not None:
             # Set up all organisms based on organism records
-            organism_list = DIO.load_organism_dataset(self.organisms_fn)
+            organism_list = dio.load_organism_dataset(self.organisms_fn)
         elif self.species_param_fns is not None:
             # Set up all organisms based on species specifications
-            organism_list = PIO.load_species_parameters(self.species_param_fns, self.world, self.custom_methods_fns)
-            DIO.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+            organism_list = pio.load_species_parameters(self.species_param_fns, self.world, self.custom_methods_fns)
+            dio.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
         else:
             sys.exit('No files specified for initialization!')
         return organism_list
@@ -140,10 +140,10 @@ class Universe(object):
         # Parse intent list and ensure it is valid
         self.organism_list = parse_intent.parse(self.intent_list, self.organism_list)
 
-        DIO.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        dio.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 
         # Potential changes to the world would go here
-        DIO.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        dio.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
 
 
 # At its simplest, the entire executable could just be written like this

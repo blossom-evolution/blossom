@@ -14,7 +14,8 @@ from world import World
 from fields import world_field_names, \
     specific_organism_field_names, species_field_names, \
     organism_field_names
-from data_io import DatasetIO, ParameterIO
+import dataset_io
+import parameter_io
 
 import organism_behavior
 from world_generator import *

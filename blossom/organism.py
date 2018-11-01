@@ -342,17 +342,23 @@ class Organism(object):
         organism = self.clone(self).update_age()
         if organism.alive:
             if not organism.at_death('old_age'):
+                # Update health
+                if organism.drinking_type is not None:
+                    organism.update_water()
+                if organism.eating_type is not None:
+                    organism.update_food()
+
                 # Keep acting if alive
-                affected_organisms = organism.act(organism_list, world)
-                for org in affected_organisms:
-                    if org.drinking_type is not None:
-                        org.update_water()
-                        if org.at_death('thirst'):
-                            org.die('thirst')
-                    if org.eating_type is not None:
-                        org.update_food()
-                        if org.at_death('hunger'):
-                            org.die('hunger')
+                affected_organisms = organism.act(organism_list, world) 
+
+                # Check water / food status
+                if organism.drinking_type is not None:
+                    if organism.at_death('thirst'):
+                        organism.die('thirst')
+                if organism.eating_type is not None:
+                    if organism.at_death('hunger'):
+                        organism.die('hunger') 
+
                 return affected_organisms
             else:
                 # This organism is at death from old age

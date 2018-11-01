@@ -15,10 +15,24 @@ START_TIME = 0
 END_TIME = 100
 
 world_size = 100
-blossom.write_environment([100000] * world_size,
-                          [0] * world_size,
+world_block = world_size // 5
+
+peak_water = 10000
+water = [peak_water] * (world_size // 2) + [0] * (world_size // 2)
+water = [0] * world_block + [peak_water] * world_block * 2 + [0] * world_block * 2
+
+peak_food = 10000
+food = [0] * (world_size // 2) + [peak_food] * (world_size // 2)
+food = [0] * world_block * 2 + [peak_water] * world_block * 2 + [0] * world_block
+
+blossom.write_environment(water,
+                          food,
                           [0] * world_size,
                           'generated_environment.json')
+# blossom.write_environment([0] * (world_size // 4) + [500] * (world_size // 4) + [1000] * (world_size // 4) + [2000] * (world_size // 4),
+#                           [0] * world_size,
+#                           [0] * world_size,
+#                           'generated_environment.json')
 
 universe = blossom.Universe(world_fn=WORLD_FN,
                             organisms_fn=ORGANISMS_FN,

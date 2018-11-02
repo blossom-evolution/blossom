@@ -8,20 +8,20 @@ def constant_eat(organism, organism_list, world):
     size = world.world_size
 
     if len(size) == 1:
-        if world.food[organism.position[0]] > 0:
-            diff = organism.food_capacity - organism.food_current
-            intake = min(organism.food_intake, diff)
-            organism.food_current += intake
-            # for one dimension
-            world.food[organism.position[0]] -= intake
+        available_food = world.food[organism.position[0]]
     elif len(size) == 2:
-        if world.food[organism.position[0]][organism.position[1]] > 0:
-            diff = organism.food_capacity - organism.food_current
-            intake = min(organism.food_intake, diff)
-            organism.food_current += intake
-            # for one dimension
-            world.food[organism.position[0]][organism.position[1]] -= intake
+        available_food = (world.food[organism.position[0]]
+                                    [organism.position[1]])
     else:
-        sys.exit('Invalid world dimensionality!')
+        sys.exit('Invalid world dimensionality: %s' % len(size))
+
+    diff = organism.food_capacity - organism.food_current
+    intake = min(available_food, diff, organism.food_intake)
+
+    organism.food_current += intake
+    if len(size) == 1:
+        world.food[organism.position[0]] -= intake
+    else:
+        world.food[organism.position[0]][organism.position[1]] -= intake
 
     return [organism]

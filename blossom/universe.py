@@ -1,12 +1,11 @@
 import sys
 import os
-import glob
 import errno
-import numpy as np
 
 import parse_intent
 import dataset_io as dio
 import parameter_io as pio
+
 
 class Universe(object):
     """
@@ -98,7 +97,10 @@ class Universe(object):
         elif self.world_param_fn is not None:
             # Set up entire world based on parameter file
             world = pio.load_world_parameters(self.world_param_fn)
-            dio.write_world_dataset(world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+            output_fn = (self.dataset_dir + 'world_ds'
+                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + self.file_extension)
+            dio.write_world_dataset(world, output_fn)
         else:
             sys.exit('No files specified for initialization!')
         return world
@@ -119,8 +121,14 @@ class Universe(object):
             organism_list = dio.load_organism_dataset(self.organisms_fn)
         elif self.species_param_fns is not None:
             # Set up all organisms based on species specifications
-            organism_list = pio.load_species_parameters(self.species_param_fns, self.world, self.custom_methods_fns)
-            dio.write_organism_dataset(organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+            organism_list = pio.load_species_parameters(
+                    self.species_param_fns,
+                    self.world,
+                    self.custom_methods_fns)
+            output_fn = (self.dataset_dir + 'organisms_ds'
+                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + self.file_extension)
+            dio.write_organism_dataset(organism_list, output_fn)
         else:
             sys.exit('No files specified for initialization!')
         return organism_list
@@ -138,12 +146,19 @@ class Universe(object):
 
         self.current_time += 1
         # Parse intent list and ensure it is valid
-        self.organism_list = parse_intent.parse(self.intent_list, self.organism_list)
+        self.organism_list = parse_intent.parse(self.intent_list,
+                                                self.organism_list)
 
-        dio.write_organism_dataset(self.organism_list, self.dataset_dir + 'organisms_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        org_output_fn = (self.dataset_dir + 'organisms_ds'
+                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + self.file_extension)
+        dio.write_organism_dataset(self.organism_list, org_output_fn)
 
+        world_output_fn = (self.dataset_dir + 'world_ds'
+                           + str(self.current_time).zfill(self.pad_zeroes)
+                           + self.file_extension)
         # Potential changes to the world would go here
-        dio.write_world_dataset(self.world, self.dataset_dir + 'world_ds' + str(self.current_time).zfill(self.pad_zeroes) + self.file_extension)
+        dio.write_world_dataset(self.world, world_output_fn)
 
 
 # At its simplest, the entire executable could just be written like this

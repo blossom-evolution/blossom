@@ -1,7 +1,5 @@
-import json
-import numpy as np
-
 import fields
+
 
 class World(object):
     """

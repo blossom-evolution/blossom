@@ -7,11 +7,13 @@ import fields
 from utils import cast_to_list
 from organism_behavior import movement, reproduction, drinking, eating, action
 
+
 class Organism(object):
     """
     A basic organism structure for all species.
     """
-    def __init__(self, init_dict = {}):
+
+    def __init__(self, init_dict={}):
         """
         Create a new organism from a dictary of parameters. The dictionary
         is specified in blossom.fields.
@@ -36,7 +38,6 @@ class Organism(object):
             for i, path in enumerate(cast_to_list(self.custom_methods_fns)):
                 temp_module = imp.load_source('%s' % i, path)
                 self.custom_modules.append(temp_module)
-
 
     @classmethod
     def clone(cls, organism):
@@ -93,8 +94,8 @@ class Organism(object):
 
     def move(self, organism_list, world):
         """
-        Method for handling movement. Searches through custom methods and built-in
-        movement methods.
+        Method for handling movement. Searches through custom methods and
+        built-in movement methods.
 
         Parameters
         ----------
@@ -114,13 +115,15 @@ class Organism(object):
         elif self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
                 if hasattr(custom_module, self.movement_type):
-                    return getattr(custom_module, self.movement_type)(self, organism_list, world)
-        return getattr(movement, self.movement_type)(self, organism_list, world)
+                    return (getattr(custom_module, self.movement_type)
+                            (self, organism_list, world))
+        return (getattr(movement, self.movement_type)
+                (self, organism_list, world))
 
     def reproduce(self, organism_list, world):
         """
-        Method for handling reproduction. Searches through custom methods and built-in
-        reproduction methods.
+        Method for handling reproduction. Searches through custom methods
+        and built-in reproduction methods.
 
         Parameters
         ----------
@@ -132,8 +135,9 @@ class Organism(object):
         Returns
         -------
         affected_organisms : Organisms, or list of Organisms
-            Organism or list of organisms affected by this organism's reproduction.
-            For example, this would include both parent and child organisms.
+            Organism or list of organisms affected by this organism's
+            reproduction. For example, this would include both parent and
+            child organisms.
 
         """
         if self.reproduction_type is None:
@@ -141,13 +145,15 @@ class Organism(object):
         elif self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
                 if hasattr(custom_module, self.reproduction_type):
-                    return getattr(custom_module, self.reproduction_type)(self, organism_list, world)
-        return getattr(reproduction, self.reproduction_type)(self, organism_list, world)
+                    return (getattr(custom_module, self.reproduction_type)
+                            (self, organism_list, world))
+        return (getattr(reproduction, self.reproduction_type)
+                (self, organism_list, world))
 
     def drink(self, organism_list, world):
         """
-        Method for handling drinking. Searches through custom methods and built-in
-        drinking methods.
+        Method for handling drinking. Searches through custom methods and
+        built-in drinking methods.
 
         Parameters
         ----------
@@ -167,13 +173,15 @@ class Organism(object):
         elif self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
                 if hasattr(custom_module, self.drinking_type):
-                    return getattr(custom_module, self.drinking_type)(self, organism_list, world)
-        return getattr(drinking, self.drinking_type)(self, organism_list, world)
+                    return (getattr(custom_module, self.drinking_type)
+                            (self, organism_list, world))
+        return (getattr(drinking, self.drinking_type)
+                (self, organism_list, world))
 
     def eat(self, organism_list, world):
         """
-        Method for handling eating. Searches through custom methods and built-in
-        eating methods.
+        Method for handling eating. Searches through custom methods and
+        built-in eating methods.
 
         Parameters
         ----------
@@ -193,7 +201,8 @@ class Organism(object):
         elif self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
                 if hasattr(custom_module, self.eating_type):
-                    return getattr(custom_module, self.eating_type)(self, organism_list, world)
+                    return (getattr(custom_module, self.eating_type)
+                            (self, organism_list, world))
         return getattr(eating, self.eating_type)(self, organism_list, world)
 
     def act(self, organism_list, world):
@@ -202,7 +211,8 @@ class Organism(object):
         Searches through custom methods and built-in movement methods.
         The action method specifically selects an action to take, from "move",
         "reproduce", "drink", and "eat". Then the appropriate instance method
-        from this class is executed to yield the final list of affect organisms.
+        from this class is executed to yield the final list of affect
+        organisms.
 
         Parameters
         ----------
@@ -221,9 +231,11 @@ class Organism(object):
         if self.custom_methods_fns is not None:
             for custom_module in self.custom_modules:
                 if hasattr(custom_module, self.action_type):
-                    action_name = getattr(custom_module, self.action_type)(self, organism_list, world)
+                    action_name = (getattr(custom_module, self.action_type)
+                                   (self, organism_list, world))
         if action_name is None:
-            action_name = getattr(action, self.action_type)(self, organism_list, world)
+            action_name = (getattr(action, self.action_type)
+                           (self, organism_list, world))
         return cast_to_list(getattr(self, action_name)(organism_list, world))
 
     def update_age(self):
@@ -288,9 +300,11 @@ class Organism(object):
         if cause == 'old_age':
             return self.age > self.max_age
         elif cause == 'thirst':
-            return self.drinking_type is not None and self.time_without_water > self.max_time_without_water
+            return (self.drinking_type is not None
+                    and self.time_without_water > self.max_time_without_water)
         elif cause == 'hunger':
-            return self.eating_type is not None and self.time_without_food > self.max_time_without_food
+            return (self.eating_type is not None
+                    and self.time_without_food > self.max_time_without_food)
         else:
             sys.exit('Invalid cause!')
 
@@ -315,8 +329,8 @@ class Organism(object):
 
     def step(self, organism_list, world):
         """
-        Steps through one time step for this organism. Reflects changes based on
-        actions / behaviors and updates to health parameters.
+        Steps through one time step for this organism. Reflects changes
+        based on actions / behaviors and updates to health parameters.
 
         Returns a list of organisms that the action produced (either new or
         altered organisms).
@@ -349,7 +363,7 @@ class Organism(object):
                     organism.update_food()
 
                 # Keep acting if alive
-                affected_organisms = organism.act(organism_list, world) 
+                affected_organisms = organism.act(organism_list, world)
 
                 # Check water / food status
                 if organism.drinking_type is not None:
@@ -357,7 +371,7 @@ class Organism(object):
                         organism.die('thirst')
                 if organism.eating_type is not None:
                     if organism.at_death('hunger'):
-                        organism.die('hunger') 
+                        organism.die('hunger')
 
                 return affected_organisms
             else:

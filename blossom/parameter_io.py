@@ -12,6 +12,7 @@ from utils import cast_to_list
 from world import World
 from organism import Organism
 
+
 def load_world_parameters(fn):
     """
     Load world parameter file and construct initial World object.
@@ -29,12 +30,12 @@ def load_world_parameters(fn):
 
     env_file = glob.glob(fn)
     if len(env_file) == 0:
-        raise IndexError('There is no environment configuration file in the '
-            + 'current directory.')
+        raise IndexError('There is no environment configuration file in the'
+                         + 'current directory.')
     if len(env_file) > 1:
-        print('There are multiple environment configuration files in the current '
-            + 'directory. There should only be one environment configuration file. '
-            + 'Selecting one at random.')
+        print('There are multiple environment configuration files in the '
+              + 'current directory. There should only be one environment '
+              + 'configuration file. Selecting the first provided..')
     env_file = env_file[0]
 
     world_dict = {}
@@ -42,19 +43,17 @@ def load_world_parameters(fn):
     config_world = configparser.ConfigParser()
     config_world.read(env_file)
 
-    # # dimensionality: int
-    # dimensionality = int(config_world.get('Overall Parameters', 'dimensionality'))
-    # world_dict['dimensionality'] = dimensionality
-
-    # world_size: space delimited ints in agreement with dimensionality, or 'None'
+    # world_size: space delimited ints, or 'None'
     # example: world_size = 10 10
     world_size = config_world.get('Overall Parameters', 'world_size')
     if world_size == 'None':
-        # this is probably harder to do, since we'd have to allow for infinite bounds...
+        # this is probably harder to do,
+        # since we'd have to allow for infinite bounds...
         world_size = None
     else:
         world_size = [int(L) for L in world_size.split()]
     world_dict['world_size'] = world_size
+    world_dict['dimensionality'] = len(world_size)
 
     # environment_filename: str, or 'None'
     environment_filename = config_world.get('Overall Parameters',
@@ -69,6 +68,7 @@ def load_world_parameters(fn):
     # world_dict['initial_environment_dict'] = initial_environment_dict
 
     return World(world_dict)
+
 
 def load_species_parameters(fns, init_world, custom_methods_fns):
     """
@@ -120,16 +120,16 @@ def load_species_parameters(fns, init_world, custom_methods_fns):
 
         # Parameters that must be int or 'None'
         param_int_none = ['max_time_without_food',
-                            'max_time_without_water',
-                            'mutation_rate',
-                            'food_capacity',
-                            'food_initial',
-                            'food_metabolism',
-                            'food_intake',
-                            'water_capacity',
-                            'water_initial',
-                            'water_metabolism',
-                            'water_intake']
+                          'max_time_without_water',
+                          'mutation_rate',
+                          'food_capacity',
+                          'food_initial',
+                          'food_metabolism',
+                          'food_intake',
+                          'water_capacity',
+                          'water_initial',
+                          'water_metabolism',
+                          'water_intake']
 
         # Parameters that must be float
         param_float = ['proportion_m',
@@ -147,7 +147,7 @@ def load_species_parameters(fns, init_world, custom_methods_fns):
         # Cycle through all parameters in the config file,
         # converting them to proper types as specifed above
         for section in config_org.sections():
-            for (key,val) in config_org.items(section):
+            for (key, val) in config_org.items(section):
 
                 if key in param_str:
                     pass

@@ -1,8 +1,8 @@
+import blossom
+
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__),'..'))
-
-import blossom
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 WORLD_FN = 'datasets/world_ds0010.txt'
 ORGANISMS_FN = 'datasets/organisms_ds0010.txt'
@@ -20,5 +20,6 @@ universe = blossom.Universe(world_fn=WORLD_FN,
                             species_param_fns=SPECIES_PARAM_FNS,
                             current_time=START_TIME,
                             end_time=END_TIME)
+
 while universe.current_time < universe.end_time:
     universe.step()

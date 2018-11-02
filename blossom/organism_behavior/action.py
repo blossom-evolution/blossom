@@ -1,10 +1,12 @@
 import random
 
+
 def move_only(organism, organism_list, world):
     """
     Only move.
     """
     return 'move'
+
 
 def move_and_reproduce(organism, organism_list, world):
     """
@@ -16,6 +18,7 @@ def move_and_reproduce(organism, organism_list, world):
     else:
         return 'move'
 
+
 def move_and_drink(organism, organism_list, world):
     """
     Move and drink. Each occurs with probability 1/2.
@@ -25,6 +28,7 @@ def move_and_drink(organism, organism_list, world):
         return 'drink'
     else:
         return 'move'
+
 
 def move_reproduce_drink(organism, organism_list, world):
     """

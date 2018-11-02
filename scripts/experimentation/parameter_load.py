@@ -5,25 +5,20 @@ ORGANISMS_FN = None
 WORLD_PARAM_FN = 'world.param'
 SPECIES_PARAM_FNS = ['species1.param']
 CUSTOM_METHODS_FNS = ['/Users/bryanbrzycki/Documents/Personal/'
-                      + 'Evolution-Code/Code/blossom/scripts/1d/'
+                      + 'Evolution-Code/Code/blossom/scripts/experimentation/'
                       + 'custom_methods.py']
-DATASET_OUTPUT_DIR = 'datasets/test_general/'
+DATASET_OUTPUT_DIR = 'datasets/fix_negatives/'
 
 START_TIME = 0
-END_TIME = 100
+END_TIME = 10
 
-world_size = 100
-world_block = world_size // 5
+world_size = 1
 
-peak_water = 10000
-water = ([0] * world_block
-         + [peak_water] * world_block * 2
-         + [0] * world_block * 2)
+peak_water = 2
+water = [peak_water] * world_size
 
-peak_food = 10000
-food = ([0] * world_block * 2
-        + [peak_water] * world_block * 2
-        + [0] * world_block)
+peak_food = 0
+food = [0] * world_size
 
 blossom.write_environment(water,
                           food,
@@ -38,6 +33,7 @@ universe = blossom.Universe(world_fn=WORLD_FN,
                             current_time=START_TIME,
                             end_time=END_TIME,
                             dataset_dir=DATASET_OUTPUT_DIR)
+
 while universe.current_time < universe.end_time:
     print('t = %s: %s organisms' % (universe.current_time,
                                     len(universe.organism_list)))

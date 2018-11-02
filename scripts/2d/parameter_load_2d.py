@@ -5,7 +5,7 @@ ORGANISMS_FN = None
 WORLD_PARAM_FN = 'world_2d.param'
 SPECIES_PARAM_FNS = ['species1_2d.param']
 CUSTOM_METHODS_FNS = ['/Users/bryanbrzycki/Documents/Personal/'
-                      + 'Evolution-Code/Code/blossom/scripts/'
+                      + 'Evolution-Code/Code/blossom/scripts/2d/'
                       + 'custom_methods.py']
 DATASET_OUTPUT_DIR = 'datasets/test_general_2d/'
 

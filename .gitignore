@@ -5,6 +5,7 @@
 images/
 
 # Data
+datasets/
 old_files/
 scripts/datasets
 

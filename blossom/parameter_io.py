@@ -30,7 +30,7 @@ def load_world_parameters(fn):
 
     env_file = glob.glob(fn)
     if len(env_file) == 0:
-        raise IndexError('There is no environment configuration file in the'
+        raise IndexError('There is no environment configuration file in the '
                          + 'current directory.')
     if len(env_file) > 1:
         print('There are multiple environment configuration files in the '

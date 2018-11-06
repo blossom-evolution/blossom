@@ -10,4 +10,4 @@
 world_size = 100 100
 
 # Filename for environment specification (str, or 'None')
-environment_filename = /Users/bryanbrzycki/Documents/Personal/Evolution-Code/Code/blossom/scripts/2d/generated_environment.json
+environment_filename = generated_environment.json

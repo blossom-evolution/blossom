@@ -58,8 +58,10 @@ class Universe(object):
         self.species_param_fns = species_param_fns
         self.custom_methods_fns = custom_methods_fns
 
-        self.current_time = current_time
-        self.end_time = end_time
+        if self.custom_methods_fns is not None:
+            self.custom_methods_fns = [os.path.abspath(path)
+                                       for path in self.custom_methods_fns
+                                       if os.path.isfile(path)]
 
         self.dataset_dir = dataset_dir
         if dataset_dir[-1] != '/':
@@ -69,6 +71,9 @@ class Universe(object):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
+
+        self.current_time = current_time
+        self.end_time = end_time
         self.pad_zeroes = pad_zeroes
         while (self.end_time - self.current_time) >= 10 ** self.pad_zeroes:
             self.pad_zeroes += 1

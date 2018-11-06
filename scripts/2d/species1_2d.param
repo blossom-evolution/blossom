@@ -6,13 +6,13 @@
 species_name = species1
 
 # Number of organisms (int)
-population_size = 3000
+population_size = 10000
 
 # Initial DNA length (int)
 dna_length = 4
 
 # Maximum old age (int, or 'None')
-max_age = 200
+max_age = 1000
 
 [Action Parameters]
 

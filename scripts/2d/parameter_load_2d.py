@@ -20,8 +20,11 @@ universe = blossom.Universe(world_fn=WORLD_FN,
                             end_time=END_TIME,
                             dataset_dir=DATASET_OUTPUT_DIR)
 
+print('t = %s: %s organisms' % (universe.current_time,
+                                len(universe.organism_list)))
+
 # Iterate until end of simulation
 while universe.current_time < universe.end_time:
+    universe.step()
     print('t = %s: %s organisms' % (universe.current_time,
                                     len(universe.organism_list)))
-    universe.step()

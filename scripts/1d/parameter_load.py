@@ -6,31 +6,9 @@ WORLD_PARAM_FN = 'world.param'
 SPECIES_PARAM_FNS = ['species1.param']
 CUSTOM_METHODS_FNS = ['custom_methods.py']
 DATASET_OUTPUT_DIR = 'datasets/'
-ENVIRONMENT_FN = 'generated_environment.json'
 
 START_TIME = 0
 END_TIME = 100
-
-# Set up world
-world_size = 100
-world_block = world_size // 5
-
-peak_water = 10000
-water = ([0] * world_block
-         + [peak_water] * world_block * 2
-         + [0] * world_block * 2)
-
-peak_food = 10000
-food = ([0] * world_block * 2
-        + [peak_water] * world_block * 2
-        + [0] * world_block)
-
-obstacles = [0] * world_size
-
-blossom.write_environment(water,
-                          food,
-                          obstacles,
-                          ENVIRONMENT_FN)
 
 # Create universe
 universe = blossom.Universe(world_fn=WORLD_FN,

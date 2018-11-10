@@ -7,6 +7,7 @@ import glob
 import configparser
 import json
 import random
+import copy
 
 from utils import cast_to_list
 from world import World
@@ -43,18 +44,6 @@ def load_world_parameters(fn):
     config_world = configparser.ConfigParser()
     config_world.read(env_file)
 
-    # world_size: space delimited ints, or 'None'
-    # example: world_size = 10 10
-    world_size = config_world.get('Overall Parameters', 'world_size')
-    if world_size == 'None':
-        # this is probably harder to do,
-        # since we'd have to allow for infinite bounds...
-        world_size = None
-    else:
-        world_size = [int(L) for L in world_size.split()]
-    world_dict['world_size'] = world_size
-    world_dict['dimensionality'] = len(world_size)
-
     # environment_filename: str, or 'None'
     environment_filename = config_world.get('Overall Parameters',
                                             'environment_filename')
@@ -62,10 +51,43 @@ def load_world_parameters(fn):
         with open(environment_filename, 'r') as f:
             initial_environment_dict = json.load(f)
 
-    world_dict['water'] = initial_environment_dict['water']
-    world_dict['food'] = initial_environment_dict['food']
-    world_dict['obstacles'] = initial_environment_dict['obstacles']
-    # world_dict['initial_environment_dict'] = initial_environment_dict
+        world_dict['water'] = initial_environment_dict['water']
+        world_dict['food'] = initial_environment_dict['food']
+        world_dict['obstacles'] = initial_environment_dict['obstacles']
+
+        if type(world_dict['water'][0]) is list:
+            world_dict['dimensionality'] = 2
+            world_dict['world_size'] = [len(world_dict['water']),
+                                        len(world_dict['water'][0])]
+        else:
+            world_dict['dimensionality'] = 1
+            world_dict['world_size'] = [len(world_dict['water'])]
+
+    else:
+        # world_size: space delimited ints, or 'None'
+        # example: world_size = 10 10
+        world_size = config_world.get('Overall Parameters', 'world_size')
+        if world_size == 'None':
+            # this is probably harder to do,
+            # since we'd have to allow for infinite bounds...
+            world_size = None
+            return -1
+        else:
+            world_size = [int(L) for L in world_size.split()]
+            world_dict['world_size'] = world_size
+            world_dict['dimensionality'] = len(world_size)
+
+            if len(world_size) == 2:
+                blank_vals = [[0 for x in range(world_size[1])]
+                              for x in range(world_size[0])]
+            elif len(world_size) == 1:
+                blank_vals = [0 for x in range(world_size)[0]]
+            else:
+                raise ValueError
+
+            world_dict['water'] = copy.deepcopy(blank_vals)
+            world_dict['food'] = copy.deepcopy(blank_vals)
+            world_dict['obstacles'] = copy.deepcopy(blank_vals)
 
     return World(world_dict)
 

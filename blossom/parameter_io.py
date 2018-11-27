@@ -12,9 +12,68 @@ import copy
 from utils import cast_to_list
 from world import World
 from organism import Organism
+import fields
 
 
-def load_world_parameters(fn):
+def load_world(fn=None, init_dict={}):
+    """
+    Load world from either parameter file or dictionary and construct
+    initial World object.
+
+    Parameters
+    ----------
+    fn : str
+        Input filename of parameter file.
+    init_dict : dict
+        Dictionary containing world parameters.
+
+    Returns
+    -------
+    world : World
+        World object constructed from the parameter file.
+    """
+    if fn:
+        return load_world_from_param_file(fn)
+    else:
+        return load_world_from_dict(init_dict)
+
+
+def load_world_from_dict(init_dict):
+    world_init_dict = {}
+    for (prop, default) in fields.world_field_names.items():
+        world_init_dict[prop] = init_dict.get(prop, default)
+
+    # Check world size parameters, set dimensionality value accordingly
+    assert type(world_init_dict['world_size']) is list
+    assert len(world_init_dict['world_size']) <= 2
+    world_init_dict['dimensionality'] = len(world_init_dict['world_size'])
+    for i in world_init_dict['world_size']:
+        assert type(i) is int
+
+    # Check that field list sizes are consistent with each other
+    field_lengths = []
+    field_names = []
+    for field in ['water', 'food', 'obstacles']:
+        if world_init_dict[field]:
+            assert type(world_init_dict[field]) is list
+            field_lengths.append(len(world_init_dict[field]))
+            field_names.append(field)
+    if len(field_lengths) >= 2:
+        assert field_lengths[0] == field_lengths[1]
+    if len(field_lengths) == 3:
+        assert field_lengths[1] == field_lengths[2]
+
+    # Check that field list sizes are consistent with the world size
+    if len(field_names) >= 1:
+        field = field_names[0]
+        assert world_init_dict['world_size'][0] == len(world_init_dict[field])
+        if len(field) == 2:
+            assert world_init_dict['world_size'][1] == len(world_init_dict[field][0])
+
+    return World(world_init_dict)
+
+
+def load_world_from_param_file(fn):
     """
     Load world parameter file and construct initial World object.
 
@@ -39,7 +98,7 @@ def load_world_parameters(fn):
               + 'configuration file. Selecting the first provided..')
     env_file = env_file[0]
 
-    world_dict = {}
+    world_init_dict = {}
     # Load from config file
     config_world = configparser.ConfigParser()
     config_world.read(env_file)
@@ -51,17 +110,17 @@ def load_world_parameters(fn):
         with open(environment_filename, 'r') as f:
             initial_environment_dict = json.load(f)
 
-        world_dict['water'] = initial_environment_dict['water']
-        world_dict['food'] = initial_environment_dict['food']
-        world_dict['obstacles'] = initial_environment_dict['obstacles']
+        world_init_dict['water'] = initial_environment_dict['water']
+        world_init_dict['food'] = initial_environment_dict['food']
+        world_init_dict['obstacles'] = initial_environment_dict['obstacles']
 
-        if type(world_dict['water'][0]) is list:
-            world_dict['dimensionality'] = 2
-            world_dict['world_size'] = [len(world_dict['water']),
-                                        len(world_dict['water'][0])]
+        if type(world_init_dict['water'][0]) is list:
+            world_init_dict['dimensionality'] = 2
+            world_init_dict['world_size'] = [len(world_init_dict['water']),
+                                        len(world_init_dict['water'][0])]
         else:
-            world_dict['dimensionality'] = 1
-            world_dict['world_size'] = [len(world_dict['water'])]
+            world_init_dict['dimensionality'] = 1
+            world_init_dict['world_size'] = [len(world_init_dict['water'])]
 
     else:
         # world_size: space delimited ints, or 'None'
@@ -74,8 +133,8 @@ def load_world_parameters(fn):
             return -1
         else:
             world_size = [int(L) for L in world_size.split()]
-            world_dict['world_size'] = world_size
-            world_dict['dimensionality'] = len(world_size)
+            world_init_dict['world_size'] = world_size
+            world_init_dict['dimensionality'] = len(world_size)
 
             if len(world_size) == 2:
                 blank_vals = [[0 for x in range(world_size[1])]
@@ -85,14 +144,136 @@ def load_world_parameters(fn):
             else:
                 raise ValueError
 
-            world_dict['water'] = copy.deepcopy(blank_vals)
-            world_dict['food'] = copy.deepcopy(blank_vals)
-            world_dict['obstacles'] = copy.deepcopy(blank_vals)
+            world_init_dict['water'] = copy.deepcopy(blank_vals)
+            world_init_dict['food'] = copy.deepcopy(blank_vals)
+            world_init_dict['obstacles'] = copy.deepcopy(blank_vals)
 
-    return World(world_dict)
+    return World(world_init_dict)
 
 
-def load_species_parameters(fns, init_world, custom_methods_fns):
+def create_organisms(species_init_dict,
+                     init_world=World({}),
+                     position_callback=None):
+    '''
+    Make organism list from an species_init_dict either provided directly or
+    scraped from parameter file.
+    '''
+    organism_list = []
+    # Generate all organisms
+    for i in range(species_init_dict['population_size']):
+        if position_callback:
+            position = position_callback(init_world.world_size)
+        elif 'position_callback' in species_init_dict.keys():
+            position = (species_init_dict['position_callback']
+                        (init_world.world_size))
+        else:
+            # Vary organism location randomly
+            position = []
+            for i in range(init_world.dimensionality):
+                position.append(random.randrange(0,
+                                                 init_world.world_size[i]))
+        species_init_dict['position'] = position
+
+        # Add organism to organism list
+        organism_list.append(Organism(species_init_dict))
+
+    return organism_list
+
+
+def load_species(fns=None,
+                 init_dicts=[{}],
+                 init_world=World({}),
+                 custom_methods_fns=[]):
+    """
+    Load organisms from available species parameter files or dictionaries.
+
+    Parameters
+    ----------
+    fns : list of str
+        Input filenames of species parameter files. Different species get
+        different species parameter files, from which the individual organisms
+        are initialized.
+    init_dicts : list of dict
+        Parameter dicts for each species.
+    init_world : World
+        Initial World instance for this Universe.
+    custom_methods_fns : list of str
+        List of external Python scripts containing custom organism
+        behaviors. :mod:`blossom` will search for methods within each
+        filename included here.
+
+    Returns
+    -------
+    organism_list : list of Organisms
+        A list of Organism objects constructed from the parameter file.
+
+    """
+    if fns:
+        return load_species_from_param_files(fns,
+                                             init_world,
+                                             custom_methods_fns)
+    else:
+        return load_species_from_dict(init_dicts,
+                                      init_world,
+                                      custom_methods_fns)
+
+
+def load_species_from_dict(init_dicts,
+                           init_world,
+                           custom_methods_fns=None):
+    init_dicts = cast_to_list(init_dicts)
+
+    organism_list = []
+    for init_dict in init_dicts:
+
+        species_init_dict = {}
+        for (prop, default) in fields.organism_field_names.items():
+            species_init_dict[prop] = init_dict.get(prop, default)
+
+        assert type(species_init_dict['species_name']) == str
+        for field in ['movement_type',
+                      'reproduction_type',
+                      'drinking_type',
+                      'eating_type',
+                      'action_type']:
+            assert (species_init_dict[field] is None
+                    or type(species_init_dict[field]) is str)
+        for field in ['dna_length']:
+            assert type(species_init_dict[field]) is int
+        for field in ['max_age',
+                      'max_time_without_food',
+                      'max_time_without_water',
+                      'mutation_rate',
+                      'food_capacity',
+                      'food_initial',
+                      'food_metabolism',
+                      'food_intake',
+                      'water_capacity',
+                      'water_initial',
+                      'water_metabolism',
+                      'water_intake']:
+            assert (species_init_dict[field] is None
+                    or type(species_init_dict[field]) is int)
+
+        assert 'population_size' in init_dict.keys()
+        assert type(init_dict['population_size']) is int
+        species_init_dict['population_size'] = init_dict['population_size']
+
+        if 'custom_methods_fns' in init_dict.keys():
+            species_init_dict['custom_methods_fns'] \
+                = init_dict['custom_methods_fns']
+        else:
+            # Track custom method file paths
+            species_init_dict['custom_methods_fns'] = custom_methods_fns
+
+        organism_list.extend(create_organisms(species_init_dict, init_world))
+
+    return organism_list
+
+
+def load_species_from_param_files(fns,
+                                  init_world,
+                                  custom_methods_fns=None):
     """
     Load all available species parameter files.
 
@@ -123,11 +304,11 @@ def load_species_parameters(fns, init_world, custom_methods_fns):
     # Initialize list of dictionaries to hold all organism parameters
     # Each dictionary contains parameters for a single species
     organism_list = []
-    for org_file in org_files:
+    for i, org_file in enumerate(org_files):
         # Initialize temporary dict to store species parameters
-        organism_dict = {}
+        species_init_dict = {}
 
-        # Parameters that must be str
+        # Parameters that must be str or None
         param_str = ['species_name',
                      'movement_type',
                      'reproduction_type',
@@ -137,11 +318,11 @@ def load_species_parameters(fns, init_world, custom_methods_fns):
 
         # Parameters that must be int
         param_int = ['population_size',
-                     'dna_length',
-                     'max_age']
+                     'dna_length']
 
         # Parameters that must be int or 'None'
-        param_int_none = ['max_time_without_food',
+        param_int_none = ['max_age',
+                          'max_time_without_food',
                           'max_time_without_water',
                           'mutation_rate',
                           'food_capacity',
@@ -188,20 +369,12 @@ def load_species_parameters(fns, init_world, custom_methods_fns):
                 # ensure 'None' parameters are set to None
                 if val == 'None':
                     val = None
-                organism_dict[key] = val
+                species_init_dict[key] = val
 
         # Track custom method file paths
-        organism_dict['custom_methods_fns'] = custom_methods_fns
+        species_init_dict['custom_methods_fns'] = custom_methods_fns
 
-        # Generate all organisms
-        for i in range(organism_dict['population_size']):
-            # Vary organism location randomly
-            position = []
-            for i in range(init_world.dimensionality):
-                position.append(random.randrange(0, init_world.world_size[i]))
-            organism_dict['position'] = position
+        organism_list.extend(create_organisms(species_init_dict,
+                                              init_world))
 
-            # Add organism to organism list
-            organism_list.append(Organism(organism_dict))
-
-        return organism_list
+    return organism_list

@@ -13,10 +13,12 @@ class Universe(object):
     """
 
     def __init__(self,
-                 world_fn=None,
-                 organisms_fn=None,
+                 world_ds_fn=None,
+                 organisms_ds_fn=None,
                  world_param_fn=None,
                  species_param_fns=None,
+                 world_param_dict={},
+                 species_param_dicts=[{}],
                  custom_methods_fns=None,
                  current_time=0,
                  end_time=10,
@@ -28,14 +30,18 @@ class Universe(object):
 
         Parameters
         ----------
-        world_fn : str
+        world_ds_fn : str
             Filename of saved world dataset.
-        organisms_fn : str
+        organisms_ds_fn : str
             Filename of saved organism dataset.
         world_param_fn : str
             Filename of world parameter file.
         species_param_fns : list of str
             List of filenames of species parameter files.
+        world_param_dict : dict
+            Dictionary containing initial world parameters.
+        species_param_dicts : list of dict
+            List of dictionaries containing initial species parameters.
         custom_methods_fns : list of str
             List of filenames of external python scripts containing custom
             behaviors.
@@ -52,11 +58,14 @@ class Universe(object):
             or '.json'.
 
         """
-        self.world_fn = world_fn
-        self.organisms_fn = organisms_fn
+        self.world_ds_fn = world_ds_fn
+        self.organisms_ds_fn = organisms_ds_fn
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
         self.custom_methods_fns = custom_methods_fns
+
+        self.world_param_dict = world_param_dict
+        self.species_param_dicts = species_param_dicts
 
         if self.custom_methods_fns is not None:
             self.custom_methods_fns = [os.path.abspath(path)
@@ -96,18 +105,19 @@ class Universe(object):
         world : World
             World at the beginning of the simulation.
         """
-        if self.world_fn is not None:
+        if self.world_ds_fn is not None:
             # Set up entire world based on world records
-            world = dio.load_world_dataset(self.world_fn)
-        elif self.world_param_fn is not None:
-            # Set up entire world based on parameter file
-            world = pio.load_world_parameters(self.world_param_fn)
+            world = dio.load_world(self.world_ds_fn)
+        else:
+            if self.world_param_fn is not None:
+                # Set up entire world based on parameter file
+                world = pio.load_world(fn=self.world_param_fn)
+            else:
+                world = pio.load_world(init_dict=self.world_param_dict)
             output_fn = (self.dataset_dir + 'world_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-            dio.write_world_dataset(world, output_fn)
-        else:
-            sys.exit('No files specified for initialization!')
+            dio.save_world(world, output_fn)
         return world
 
     def initialize_organisms(self):
@@ -121,21 +131,25 @@ class Universe(object):
         organism_list : list of Organisms
             List of organisms at the beginning of the simulation.
         """
-        if self.organisms_fn is not None:
+        if self.organisms_ds_fn is not None:
             # Set up all organisms based on organism records
-            organism_list = dio.load_organism_dataset(self.organisms_fn)
-        elif self.species_param_fns is not None:
-            # Set up all organisms based on species specifications
-            organism_list = pio.load_species_parameters(
-                    self.species_param_fns,
-                    self.world,
-                    self.custom_methods_fns)
+            organism_list = dio.load_organisms(self.organisms_ds_fn)
+        else:
+            if self.species_param_fns is not None:
+                # Set up all organisms based on species specifications
+                organism_list = pio.load_species(
+                                    fns=self.species_param_fns,
+                                    init_world=self.world,
+                                    custom_methods_fns=self.custom_methods_fns)
+            else:
+                organism_list = pio.load_species(
+                                    init_dicts=self.species_param_dicts,
+                                    init_world=self.world,
+                                    custom_methods_fns=self.custom_methods_fns)
             output_fn = (self.dataset_dir + 'organisms_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-            dio.write_organism_dataset(organism_list, output_fn)
-        else:
-            sys.exit('No files specified for initialization!')
+            dio.save_organisms(organism_list, output_fn)
         return organism_list
 
     def step(self):
@@ -157,13 +171,13 @@ class Universe(object):
         org_output_fn = (self.dataset_dir + 'organisms_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-        dio.write_organism_dataset(self.organism_list, org_output_fn)
+        dio.save_organisms(self.organism_list, org_output_fn)
 
         world_output_fn = (self.dataset_dir + 'world_ds'
                            + str(self.current_time).zfill(self.pad_zeroes)
                            + self.file_extension)
         # Potential changes to the world would go here
-        dio.write_world_dataset(self.world, world_output_fn)
+        dio.save_world(self.world, world_output_fn)
 
 
 # At its simplest, the entire executable could just be written like this

@@ -286,7 +286,7 @@ def load_species_from_dict(init_dicts,
                 and species_init_dict['water_metabolism'] is not None
                 and species_init_dict['water_intake'] is not None
                 and species_init_dict['max_time_without_water'] is not None
-                    )
+            )
         if species_init_dict['eating_type']:
             assert (
                 species_init_dict['food_capacity'] is not None
@@ -294,7 +294,7 @@ def load_species_from_dict(init_dicts,
                 and species_init_dict['food_metabolism'] is not None
                 and species_init_dict['food_intake'] is not None
                 and species_init_dict['max_time_without_food'] is not None
-                    )
+            )
 
         for field in ['max_age',
                       'max_time_without_food',

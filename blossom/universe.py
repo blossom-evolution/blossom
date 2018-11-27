@@ -2,7 +2,10 @@ import sys
 import os
 import errno
 
+import time
+
 import parse_intent
+import utils
 import dataset_io as dio
 import parameter_io as pio
 
@@ -23,7 +26,7 @@ class Universe(object):
                  current_time=0,
                  end_time=10,
                  dataset_dir='datasets/',
-                 pad_zeroes=4,
+                 pad_zeroes=0,
                  file_extension='.txt'):
         """
         Initialize universe based on either parameter files or saved datasets.
@@ -58,6 +61,9 @@ class Universe(object):
             or '.json'.
 
         """
+        self.start_timestamp = time.time()
+        self.last_timestamp = self.start_timestamp
+
         self.world_ds_fn = world_ds_fn
         self.organisms_ds_fn = organisms_ds_fn
         self.world_param_fn = world_param_fn
@@ -179,13 +185,55 @@ class Universe(object):
         # Potential changes to the world would go here
         dio.save_world(self.world, world_output_fn)
 
-    def run(self):
-        print('t = %s: %s organisms' % (self.current_time,
-                                        len(self.organism_list)))
+    def current_info(self, verbosity=1, expanded=True):
+        pstring = 't = %s' % (self.current_time)
+        if verbosity >= 1:
+            if expanded:
+                pstring = (
+                    '... t = %s\n'
+                    % str(self.current_time).zfill(self.pad_zeroes)
+
+                    + '    Number of organisms: %s\n'
+                      % len(self.organism_list)
+                )
+            else:
+                rt_pstring = 't = %s: %s organisms' % (self.current_time,
+                                                       len(self.organism_list))
+        if verbosity >= 2:
+            now = time.time()
+            last_time_diff = now - self.last_timestamp
+            self.last_timestamp = now
+            if expanded:
+                pstring += (
+                    '    Time elapsed since last timestep: %s\n'
+                    % utils.time_to_string(last_time_diff)
+                )
+            else:
+                pstring = rt_pstring + (
+                    ' (%s)'
+                    % (utils.time_to_string(last_time_diff))
+                )
+        if verbosity >= 3:
+            start_time_diff = now - self.start_timestamp
+            if expanded:
+                pstring += (
+                    '    Time elapsed since start: %s\n'
+                    % utils.time_to_string(start_time_diff)
+                )
+            else:
+                pstring = rt_pstring + (
+                    ' (%s; %s)'
+                    % (utils.time_to_string(last_time_diff),
+                       utils.time_to_string(start_time_diff))
+                )
+        return pstring
+
+    def run(self, verbosity=1, expanded=True):
+        print(self.current_info(verbosity=verbosity, expanded=expanded))
         while self.current_time < self.end_time:
             self.step()
-            print('t = %s: %s organisms' % (self.current_time,
-                                            len(self.organism_list)))
+            print(self.current_info(verbosity=verbosity, expanded=expanded))
+
 
 # At its simplest, the entire executable could just be written like this
 if __name__ == '__main__':

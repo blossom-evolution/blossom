@@ -221,6 +221,28 @@ def load_species(fns=None,
 def load_species_from_dict(init_dicts,
                            init_world,
                            custom_methods_fns=None):
+    """
+    Create a list of organisms loaded from Python dicts.
+
+    Parameters
+    ----------
+    init_dicts : list of dict
+        Input species dictionaries from which the individual organisms
+        are initialized. Each dictionary is for a different species.
+    init_world : World
+        Initial World instance for this Universe.
+    custom_methods_fns : list of str
+        List of external Python scripts containing custom organism
+        behaviors. :mod:`blossom` will search for methods within each
+        filename included here.
+
+    Returns
+    -------
+    organism_list : list of Organisms
+        A list of Organism objects constructed from the parameter file.
+
+    """
+
     init_dicts = cast_to_list(init_dicts)
 
     organism_list = []
@@ -230,7 +252,13 @@ def load_species_from_dict(init_dicts,
         for (prop, default) in fields.organism_field_names.items():
             species_init_dict[prop] = init_dict.get(prop, default)
 
+        assert 'population_size' in init_dict.keys()
+        population_size = init_dict['population_size']
+        assert type(population_size) is int
+        species_init_dict['population_size'] = population_size
+
         assert type(species_init_dict['species_name']) == str
+
         for field in ['movement_type',
                       'reproduction_type',
                       'drinking_type',
@@ -238,8 +266,27 @@ def load_species_from_dict(init_dicts,
                       'action_type']:
             assert (species_init_dict[field] is None
                     or type(species_init_dict[field]) is str)
+
         for field in ['dna_length']:
             assert type(species_init_dict[field]) is int
+
+        if species_init_dict['drinking_type']:
+            assert (
+                species_init_dict['water_capacity'] is not None
+                and species_init_dict['water_initial'] is not None
+                and species_init_dict['water_metabolism'] is not None
+                and species_init_dict['water_intake'] is not None
+                and species_init_dict['max_time_without_water'] is not None
+                    )
+        if species_init_dict['eating_type']:
+            assert (
+                species_init_dict['food_capacity'] is not None
+                and species_init_dict['food_initial'] is not None
+                and species_init_dict['food_metabolism'] is not None
+                and species_init_dict['food_intake'] is not None
+                and species_init_dict['max_time_without_food'] is not None
+                    )
+
         for field in ['max_age',
                       'max_time_without_food',
                       'max_time_without_water',
@@ -252,12 +299,13 @@ def load_species_from_dict(init_dicts,
                       'water_initial',
                       'water_metabolism',
                       'water_intake']:
-            assert (species_init_dict[field] is None
-                    or type(species_init_dict[field]) is int)
-
-        assert 'population_size' in init_dict.keys()
-        assert type(init_dict['population_size']) is int
-        species_init_dict['population_size'] = init_dict['population_size']
+            if type(species_init_dict[field]) is list:
+                assert (len(species_init_dict[field]) == population_size)
+            elif type(species_init_dict[field]) is int:
+                species_init_dict[field] = ([species_init_dict[field]]
+                                            * population_size)
+            else:
+                assert species_init_dict[field] is None
 
         if 'custom_methods_fns' in init_dict.keys():
             species_init_dict['custom_methods_fns'] \

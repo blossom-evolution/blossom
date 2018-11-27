@@ -159,9 +159,18 @@ def create_organisms(species_init_dict,
     scraped from parameter file.
     '''
     organism_list = []
+    list_field_keys = []
+    for key in species_init_dict.keys():
+        if type(species_init_dict[key]) is list:
+            list_field_keys.append(key)
     # Generate all organisms
     for i in range(species_init_dict['population_size']):
-        if position_callback:
+        organism_init_dict = copy.deepcopy(species_init_dict)
+        for key in list_field_keys:
+            organism_init_dict[key] = organism_init_dict[key][i]
+        if 'initial_positions' in species_init_dict.keys():
+            position = organism_init_dict['initial_positions']
+        elif position_callback:
             position = position_callback(init_world.world_size)
         elif 'position_callback' in species_init_dict.keys():
             position = (species_init_dict['position_callback']
@@ -172,10 +181,10 @@ def create_organisms(species_init_dict,
             for i in range(init_world.dimensionality):
                 position.append(random.randrange(0,
                                                  init_world.world_size[i]))
-        species_init_dict['position'] = position
+        organism_init_dict['position'] = position
 
         # Add organism to organism list
-        organism_list.append(Organism(species_init_dict))
+        organism_list.append(Organism(organism_init_dict))
 
     return organism_list
 
@@ -249,7 +258,7 @@ def load_species_from_dict(init_dicts,
     for init_dict in init_dicts:
 
         species_init_dict = {}
-        for (prop, default) in fields.organism_field_names.items():
+        for (prop, default) in fields.species_field_names.items():
             species_init_dict[prop] = init_dict.get(prop, default)
 
         assert 'population_size' in init_dict.keys()
@@ -313,6 +322,13 @@ def load_species_from_dict(init_dicts,
         else:
             # Track custom method file paths
             species_init_dict['custom_methods_fns'] = custom_methods_fns
+
+        if 'initial_positions' in init_dict.keys():
+            assert len(init_dict['initial_positions']) == population_size
+            for position in init_dict['initial_positions']:
+                assert len(position) == init_world.dimensionality
+            species_init_dict['initial_positions'] \
+                = init_dict['initial_positions']
 
         organism_list.extend(create_organisms(species_init_dict, init_world))
 

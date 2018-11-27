@@ -179,9 +179,15 @@ class Universe(object):
         # Potential changes to the world would go here
         dio.save_world(self.world, world_output_fn)
 
+    def run(self):
+        print('t = %s: %s organisms' % (self.current_time,
+                                        len(self.organism_list)))
+        while self.current_time < self.end_time:
+            self.step()
+            print('t = %s: %s organisms' % (self.current_time,
+                                            len(self.organism_list)))
 
 # At its simplest, the entire executable could just be written like this
 if __name__ == '__main__':
     universe = Universe()
-    while universe.current_time < universe.end_time:
-        universe.step()
+    universe.run()

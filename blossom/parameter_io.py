@@ -56,6 +56,14 @@ def load_world_from_dict(init_dict):
     for field in ['water', 'food', 'obstacles']:
         if world_init_dict[field]:
             assert type(world_init_dict[field]) is list
+            # Check each element of these fields is either int or float (can
+            # include math.inf, which is a float)
+            for i in world_init_dict[field]:
+                if type(i) is list:
+                    for j in i:
+                        assert type(j) in [int, float]
+                else:
+                    assert type(i) in [int, float]
             field_lengths.append(len(world_init_dict[field]))
             field_names.append(field)
     if len(field_lengths) >= 2:
@@ -68,7 +76,8 @@ def load_world_from_dict(init_dict):
         field = field_names[0]
         assert world_init_dict['world_size'][0] == len(world_init_dict[field])
         if len(field) == 2:
-            assert world_init_dict['world_size'][1] == len(world_init_dict[field][0])
+            assert world_init_dict['world_size'][1] \
+                == len(world_init_dict[field][0])
 
     return World(world_init_dict)
 
@@ -310,7 +319,7 @@ def load_species_from_dict(init_dicts,
                       'water_intake']:
             if type(species_init_dict[field]) is list:
                 assert (len(species_init_dict[field]) == population_size)
-            elif type(species_init_dict[field]) is int:
+            elif type(species_init_dict[field]) in [int, float]:
                 species_init_dict[field] = ([species_init_dict[field]]
                                             * population_size)
             else:
@@ -384,19 +393,19 @@ def load_species_from_param_files(fns,
         param_int = ['population_size',
                      'dna_length']
 
-        # Parameters that must be int or 'None'
-        param_int_none = ['max_age',
-                          'max_time_without_food',
-                          'max_time_without_water',
-                          'mutation_rate',
-                          'food_capacity',
-                          'food_initial',
-                          'food_metabolism',
-                          'food_intake',
-                          'water_capacity',
-                          'water_initial',
-                          'water_metabolism',
-                          'water_intake']
+        # Parameters that must be int or 'None' or 'inf'
+        param_int_none_inf = ['max_age',
+                              'max_time_without_food',
+                              'max_time_without_water',
+                              'mutation_rate',
+                              'food_capacity',
+                              'food_initial',
+                              'food_metabolism',
+                              'food_intake',
+                              'water_capacity',
+                              'water_initial',
+                              'water_metabolism',
+                              'water_intake']
 
         # Parameters that must be float
         param_float = ['proportion_m',
@@ -420,9 +429,9 @@ def load_species_from_param_files(fns,
                     pass
                 elif key in param_int:
                     val = int(val)
-                elif key in param_int_none:
-                    if val != 'None':
-                        val = int(val)
+                elif key in param_int_none_inf:
+                    if val != 'None' and type(val) not in [int, float]:
+                        val = float(val)
                 elif key in param_float:
                     val = float(val)
                 elif key in param_bool:

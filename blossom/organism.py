@@ -362,8 +362,14 @@ class Organism(object):
                 if organism.eating_type is not None:
                     organism.update_food()
 
-                # Keep acting if alive
-                affected_organisms = organism.act(organism_list, world)
+                # Keep acting if alive - organism list is at a prior timestep,
+                # however
+                other_organisms = []
+                for org in organism_list:
+                    if org.organism_id != organism.organism_id \
+                            and org.alive:
+                        other_organisms.append(self.clone(org).update_age())
+                affected_organisms = organism.act(other_organisms, world)
 
                 # Check water / food status
                 if organism.drinking_type is not None:

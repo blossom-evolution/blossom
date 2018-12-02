@@ -1,4 +1,6 @@
-
+"""
+Built-in methods for organism behaviors.
+"""
 
 import sys
 import os

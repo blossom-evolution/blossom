@@ -81,8 +81,11 @@ def save_organisms(organism_list, fn):
     organism_dict_list = []
     for organism in organism_list:
         organism_dict = vars(organism)
+
         # Make sure we're not serializing the loaded modules themselves
-        del organism_dict['custom_modules']
+        if 'custom_modules' in organism_dict.keys():
+            del organism_dict['custom_modules']
+
         organism_dict_list.append(organism_dict)
     with open(fn, 'w') as f:
         json.dump(organism_dict_list, f, indent=2)

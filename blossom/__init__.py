@@ -18,4 +18,4 @@ import dataset_io
 import parameter_io
 
 import organism_behavior
-from world_generator import write_environment
+import world_generator

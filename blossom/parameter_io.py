@@ -171,7 +171,8 @@ def create_organisms(species_init_dict,
     list_field_keys = []
     for key in species_init_dict.keys():
         if type(species_init_dict[key]) is list:
-            list_field_keys.append(key)
+            if key != 'custom_methods_fns':
+                list_field_keys.append(key)
     # Generate all organisms
     for i in range(species_init_dict['population_size']):
         organism_init_dict = copy.deepcopy(species_init_dict)
@@ -325,10 +326,7 @@ def load_species_from_dict(init_dicts,
             else:
                 assert species_init_dict[field] is None
 
-        if 'custom_methods_fns' in init_dict.keys():
-            species_init_dict['custom_methods_fns'] \
-                = init_dict['custom_methods_fns']
-        else:
+        if not species_init_dict['custom_methods_fns']:
             # Track custom method file paths
             species_init_dict['custom_methods_fns'] = custom_methods_fns
 

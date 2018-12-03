@@ -2,7 +2,7 @@ import uuid
 import math
 
 
-def pure_replication(organism, organism_list, world):
+def pure_replication(organism, organism_list, world, position_hash_table=None):
     """
     Replace organism with two organism with similar parameters.
     Essentially, only differences in parameters are organism id,
@@ -13,7 +13,7 @@ def pure_replication(organism, organism_list, world):
 
     # Generate new organisms
     for i in range(2):
-        child = organism.clone(organism)
+        child = organism.clone_self()
         child.update_parameter('age', 0)
         child.update_parameter('organism_id', str(uuid.uuid4()))
         child.update_parameter('ancestry', organism.organism_id, 'append')

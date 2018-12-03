@@ -32,11 +32,19 @@ def parse(intent_list, organism_list):
     updated_list = []
     id_hash_table = hash_organism_list.hash_by_id(intent_list)
     for id in id_hash_table.keys():
-        for organism in id_hash_table[id]:
-            # TODO: Need to flesh this out, not exactly correct
-            # for deciding which organisms to keep in conflicts
-            if organism.age_at_death == organism.age \
-                    or organism.age_at_death is None:
-                updated_list.append(organism)
-                break
+        if len(id_hash_table[id]) == 1:
+            updated_list.extend(id_hash_table[id])
+        else:
+            selected = False
+            for organism in id_hash_table[id]:
+                # If organism died in this timestep, add it to the list.
+                if organism.age_at_death == organism.age:
+                    updated_list.append(organism)
+                    selected = True
+                    break
+            if not selected:
+                # If no organism died, then find first available organism.
+                # For more complicated circumstances, this may need to be
+                # extended.
+                updated_list.append(id_hash_table[id][0])
     return updated_list

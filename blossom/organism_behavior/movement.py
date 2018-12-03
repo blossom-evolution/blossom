@@ -2,14 +2,14 @@ import sys
 import random
 
 
-def stationary(organism, organism_list, world):
+def stationary(organism, organism_list, world, position_hash_table=None):
     """
     Organism stays still.
     """
     return [organism]
 
 
-def simple_random(organism, organism_list, world):
+def simple_random(organism, organism_list, world, position_hash_table=None):
     """
     Move in random direction with equal probability. For 2D, organisms walk
     diagonally.

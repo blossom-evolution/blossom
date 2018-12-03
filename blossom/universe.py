@@ -8,6 +8,7 @@ import parse_intent
 import utils
 import dataset_io as dio
 import parameter_io as pio
+import hash_organism_list
 
 
 class Universe(object):
@@ -164,13 +165,25 @@ class Universe(object):
         computing new organism states. Saves all organisms and the world
         to file at the end of each step.
         """
+        # Increment time step
+        self.current_time += 1
+        organism_list = [organism.clone_self()._update_age()
+                         for organism in self.organism_list
+                         if organism.alive]
+        position_hash_table = (hash_organism_list
+                               .hash_by_position(organism_list))
+
         self.intent_list = []
         for organism in self.organism_list:
-            for new_organism in organism.step(self.organism_list, self.world):
-                self.intent_list.append(new_organism)
+            if organism.alive:
+                self.intent_list.extend(
+                    organism.step(organism_list,
+                                  self.world,
+                                  position_hash_table=position_hash_table)
+                )
 
-        self.current_time += 1
         # Parse intent list and ensure it is valid
+        # Decide whether this should be self.organism_list or organism_list
         self.organism_list = parse_intent.parse(self.intent_list,
                                                 self.organism_list)
 

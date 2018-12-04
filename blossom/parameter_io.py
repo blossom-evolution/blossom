@@ -42,10 +42,12 @@ def load_world_from_dict(init_dict):
     world_init_dict = {}
     for (prop, default) in fields.world_field_names.items():
         world_init_dict[prop] = init_dict.get(prop, default)
-
     # Check world size parameters, set dimensionality value accordingly
-    assert type(world_init_dict['world_size']) is list
-    assert len(world_init_dict['world_size']) <= 2
+    if type(world_init_dict['world_size']) is int:
+        world_init_dict['world_size'] = [world_init_dict['world_size']]
+    else:
+        assert type(world_init_dict['world_size']) is list
+        assert len(world_init_dict['world_size']) <= 2
     world_init_dict['dimensionality'] = len(world_init_dict['world_size'])
     for i in world_init_dict['world_size']:
         assert type(i) is int

@@ -384,11 +384,6 @@ class Organism(object):
         organism = self.clone_self()._update_age()
         if organism.alive:
             if not organism.at_death('old_age'):
-                # Update health
-                if organism.drinking_type is not None:
-                    organism._update_water()
-                if organism.eating_type is not None:
-                    organism._update_food()
 
                 affected_organisms = organism.act(
                     organism_list,
@@ -406,6 +401,12 @@ class Organism(object):
                 if not already_included:
                     organism = organism.die('unknown')
                     affected_organisms.append(organism)
+
+                # Update health
+                if organism.drinking_type is not None:
+                    organism._update_water()
+                if organism.eating_type is not None:
+                    organism._update_food()
 
                 if organism.alive:
                     # Check water / food status

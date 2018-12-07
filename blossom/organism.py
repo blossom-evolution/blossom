@@ -280,9 +280,25 @@ class Organism(object):
             action_name = (getattr(action, self.action_type)
                            (self, organism_list, world,
                             position_hash_table=position_hash_table))
-        return cast_to_list(getattr(self, action_name)
-                            (organism_list, world,
-                             position_hash_table=position_hash_table))
+
+        self.last_action = action_name
+
+        affected_organisms = cast_to_list(getattr(self, action_name)(
+            organism_list,
+            world,
+            position_hash_table=position_hash_table
+        ))
+
+        # Ensure this organism is included in affected_organisms
+        already_included = False
+        for org in affected_organisms:
+            if org.organism_id == self.organism_id:
+                already_included = True
+        if not already_included:
+            self.die('unknown')
+            affected_organisms.append(self)
+
+        return self, affected_organisms
 
     def _update_age(self):
         """
@@ -407,22 +423,11 @@ class Organism(object):
         if organism.alive:
             if not organism.at_death('old_age'):
 
-                affected_organisms = organism.act(
+                organism, affected_organisms = organism.act(
                     organism_list,
                     world,
                     position_hash_table=position_hash_table
                 )
-
-                # Check health of organism after action and ensure it is
-                # part of affected_organisms
-                already_included = False
-                for org in affected_organisms:
-                    if org.organism_id == organism.organism_id:
-                        organism = org
-                        already_included = True
-                if not already_included:
-                    organism = organism.die('unknown')
-                    affected_organisms.append(organism)
 
                 # Update health
                 if organism.drinking_type is not None:

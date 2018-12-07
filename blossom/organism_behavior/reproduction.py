@@ -17,6 +17,7 @@ def pure_replication(organism, organism_list, world, position_hash_table=None):
         child.update_parameter('age', 0)
         child.update_parameter('organism_id', str(uuid.uuid4()))
         child.update_parameter('ancestry', organism.organism_id, 'append')
+        child.update_parameter('last_action', None)
         if organism.drinking_type is not None:
             child.update_parameter('water_current',
                                    math.floor(organism.water_current / 2))

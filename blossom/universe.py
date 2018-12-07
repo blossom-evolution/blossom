@@ -8,7 +8,7 @@ import parse_intent
 import utils
 import dataset_io as dio
 import parameter_io as pio
-import hash_organism_list
+import organism_list_funcs
 
 
 class Universe(object):
@@ -170,7 +170,7 @@ class Universe(object):
         organism_list = [organism.clone_self()._update_age()
                          for organism in self.organism_list
                          if organism.alive]
-        position_hash_table = (hash_organism_list
+        position_hash_table = (organism_list_funcs
                                .hash_by_position(organism_list))
 
         self.intent_list = []

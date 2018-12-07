@@ -23,3 +23,10 @@ def constant_list(val, length):
     Generate a constant-valued list.
     """
     return [val] * length
+
+
+def constant_2d_list(val, size):
+    """
+    Generate a constant-valued two dimensional array.
+    """
+    return [constant_list(val, size[1]) for i in size[0]]

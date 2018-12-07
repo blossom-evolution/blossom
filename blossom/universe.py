@@ -2,9 +2,13 @@ import sys
 import os
 import errno
 
+import time
+
 import parse_intent
+import utils
 import dataset_io as dio
 import parameter_io as pio
+import organism_list_funcs
 
 
 class Universe(object):
@@ -13,30 +17,36 @@ class Universe(object):
     """
 
     def __init__(self,
-                 world_fn=None,
-                 organisms_fn=None,
+                 world_ds_fn=None,
+                 organisms_ds_fn=None,
                  world_param_fn=None,
                  species_param_fns=None,
-                 custom_methods_fns=None,
+                 world_param_dict={},
+                 species_param_dicts=[{}],
+                 custom_module_fns=None,
                  current_time=0,
                  end_time=10,
                  dataset_dir='datasets/',
-                 pad_zeroes=4,
+                 pad_zeroes=0,
                  file_extension='.txt'):
         """
         Initialize universe based on either parameter files or saved datasets.
 
         Parameters
         ----------
-        world_fn : str
+        world_ds_fn : str
             Filename of saved world dataset.
-        organisms_fn : str
+        organisms_ds_fn : str
             Filename of saved organism dataset.
         world_param_fn : str
             Filename of world parameter file.
         species_param_fns : list of str
             List of filenames of species parameter files.
-        custom_methods_fns : list of str
+        world_param_dict : dict
+            Dictionary containing initial world parameters.
+        species_param_dicts : list of dict
+            List of dictionaries containing initial species parameters.
+        custom_module_fns : list of str
             List of filenames of external python scripts containing custom
             behaviors.
         current_time : int
@@ -52,16 +62,22 @@ class Universe(object):
             or '.json'.
 
         """
-        self.world_fn = world_fn
-        self.organisms_fn = organisms_fn
+        self.start_timestamp = time.time()
+        self.last_timestamp = self.start_timestamp
+
+        self.world_ds_fn = world_ds_fn
+        self.organisms_ds_fn = organisms_ds_fn
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
-        self.custom_methods_fns = custom_methods_fns
+        self.custom_module_fns = custom_module_fns
 
-        if self.custom_methods_fns is not None:
-            self.custom_methods_fns = [os.path.abspath(path)
-                                       for path in self.custom_methods_fns
-                                       if os.path.isfile(path)]
+        self.world_param_dict = world_param_dict
+        self.species_param_dicts = species_param_dicts
+
+        if self.custom_module_fns is not None:
+            self.custom_module_fns = [os.path.abspath(path)
+                                      for path in self.custom_module_fns
+                                      if os.path.isfile(path)]
 
         self.dataset_dir = dataset_dir
         if dataset_dir[-1] != '/':
@@ -96,18 +112,19 @@ class Universe(object):
         world : World
             World at the beginning of the simulation.
         """
-        if self.world_fn is not None:
+        if self.world_ds_fn is not None:
             # Set up entire world based on world records
-            world = dio.load_world_dataset(self.world_fn)
-        elif self.world_param_fn is not None:
-            # Set up entire world based on parameter file
-            world = pio.load_world_parameters(self.world_param_fn)
+            world = dio.load_world(self.world_ds_fn)
+        else:
+            if self.world_param_fn is not None:
+                # Set up entire world based on parameter file
+                world = pio.load_world(fn=self.world_param_fn)
+            else:
+                world = pio.load_world(init_dict=self.world_param_dict)
             output_fn = (self.dataset_dir + 'world_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-            dio.write_world_dataset(world, output_fn)
-        else:
-            sys.exit('No files specified for initialization!')
+            dio.save_world(world, output_fn)
         return world
 
     def initialize_organisms(self):
@@ -121,21 +138,25 @@ class Universe(object):
         organism_list : list of Organisms
             List of organisms at the beginning of the simulation.
         """
-        if self.organisms_fn is not None:
+        if self.organisms_ds_fn is not None:
             # Set up all organisms based on organism records
-            organism_list = dio.load_organism_dataset(self.organisms_fn)
-        elif self.species_param_fns is not None:
-            # Set up all organisms based on species specifications
-            organism_list = pio.load_species_parameters(
-                    self.species_param_fns,
-                    self.world,
-                    self.custom_methods_fns)
+            organism_list = dio.load_organisms(self.organisms_ds_fn)
+        else:
+            if self.species_param_fns is not None:
+                # Set up all organisms based on species specifications
+                organism_list = pio.load_species(
+                                    fns=self.species_param_fns,
+                                    init_world=self.world,
+                                    custom_module_fns=self.custom_module_fns)
+            else:
+                organism_list = pio.load_species(
+                                    init_dicts=self.species_param_dicts,
+                                    init_world=self.world,
+                                    custom_module_fns=self.custom_module_fns)
             output_fn = (self.dataset_dir + 'organisms_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-            dio.write_organism_dataset(organism_list, output_fn)
-        else:
-            sys.exit('No files specified for initialization!')
+            dio.save_organisms(organism_list, output_fn)
         return organism_list
 
     def step(self):
@@ -144,30 +165,90 @@ class Universe(object):
         computing new organism states. Saves all organisms and the world
         to file at the end of each step.
         """
+        # Increment time step
+        self.current_time += 1
+        organism_list = [organism.clone_self()._update_age()
+                         for organism in self.organism_list
+                         if organism.alive]
+        position_hash_table = (organism_list_funcs
+                               .hash_by_position(organism_list))
+
         self.intent_list = []
         for organism in self.organism_list:
-            for new_organism in organism.step(self.organism_list, self.world):
-                self.intent_list.append(new_organism)
+            if organism.alive:
+                self.intent_list.extend(
+                    organism.step(organism_list,
+                                  self.world,
+                                  position_hash_table=position_hash_table)
+                )
 
-        self.current_time += 1
         # Parse intent list and ensure it is valid
+        # Decide whether this should be self.organism_list or organism_list
         self.organism_list = parse_intent.parse(self.intent_list,
                                                 self.organism_list)
 
         org_output_fn = (self.dataset_dir + 'organisms_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)
-        dio.write_organism_dataset(self.organism_list, org_output_fn)
+        dio.save_organisms(self.organism_list, org_output_fn)
 
         world_output_fn = (self.dataset_dir + 'world_ds'
                            + str(self.current_time).zfill(self.pad_zeroes)
                            + self.file_extension)
         # Potential changes to the world would go here
-        dio.write_world_dataset(self.world, world_output_fn)
+        dio.save_world(self.world, world_output_fn)
+
+    def current_info(self, verbosity=1, expanded=True):
+        pstring = 't = %s' % (self.current_time)
+        if verbosity >= 1:
+            if expanded:
+                pstring = (
+                    '... t = %s\n'
+                    % str(self.current_time).zfill(self.pad_zeroes)
+
+                    + '    Number of organisms: %s\n'
+                      % len(self.organism_list)
+                )
+            else:
+                rt_pstring = 't = %s: %s organisms' % (self.current_time,
+                                                       len(self.organism_list))
+        if verbosity >= 2:
+            now = time.time()
+            last_time_diff = now - self.last_timestamp
+            self.last_timestamp = now
+            if expanded:
+                pstring += (
+                    '    Time elapsed since last timestep: %s\n'
+                    % utils.time_to_string(last_time_diff)
+                )
+            else:
+                pstring = rt_pstring + (
+                    ' (%s)'
+                    % (utils.time_to_string(last_time_diff))
+                )
+        if verbosity >= 3:
+            start_time_diff = now - self.start_timestamp
+            if expanded:
+                pstring += (
+                    '    Time elapsed since start: %s\n'
+                    % utils.time_to_string(start_time_diff)
+                )
+            else:
+                pstring = rt_pstring + (
+                    ' (%s; %s)'
+                    % (utils.time_to_string(last_time_diff),
+                       utils.time_to_string(start_time_diff))
+                )
+        return pstring
+
+    def run(self, verbosity=1, expanded=True):
+        print(self.current_info(verbosity=verbosity, expanded=expanded))
+        while self.current_time < self.end_time:
+            self.step()
+            print(self.current_info(verbosity=verbosity, expanded=expanded))
 
 
 # At its simplest, the entire executable could just be written like this
 if __name__ == '__main__':
     universe = Universe()
-    while universe.current_time < universe.end_time:
-        universe.step()
+    universe.run()

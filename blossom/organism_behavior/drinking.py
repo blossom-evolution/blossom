@@ -1,7 +1,7 @@
 import sys
 
 
-def constant_drink(organism, organism_list, world):
+def constant_drink(organism, organism_list, world, position_hash_table=None):
     """
     Intake constant amount of water from world if water is present.
     """

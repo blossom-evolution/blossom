@@ -8,7 +8,8 @@ import json
 from world import World
 from organism import Organism
 
-def load_world_dataset(fn):
+
+def load_world(fn):
     """
     Load dataset file from JSON.
     filenames can be a single string or a list of strings.
@@ -27,7 +28,8 @@ def load_world_dataset(fn):
         world_dict = json.load(f)
     return World(world_dict)
 
-def write_world_dataset(world, fn):
+
+def save_world(world, fn):
     """
     Write world information from World object to file in JSON format.
 
@@ -39,9 +41,10 @@ def write_world_dataset(world, fn):
         Output filename of saved world dataset.
     """
     with open(fn, 'w') as f:
-        json.dump(vars(world), f, indent=2)
+        json.dump(world.to_dict(), f, indent=2)
 
-def load_organism_dataset(fn):
+
+def load_organisms(fn):
     """
     Load dataset file from JSON.
     filenames can be a single string or a list of strings.
@@ -58,10 +61,12 @@ def load_organism_dataset(fn):
     """
     with open(fn, 'r') as f:
         organism_dict_list = json.load(f)
-    organism_list = [Organism(organism_dict) for organism_dict in organism_dict_list]
+    organism_list = [Organism(organism_dict)
+                     for organism_dict in organism_dict_list]
     return organism_list
 
-def write_organism_dataset(organism_list, fn):
+
+def save_organisms(organism_list, fn):
     """
     Write organism data from list of Organism objects to file in JSON
     format.
@@ -75,9 +80,12 @@ def write_organism_dataset(organism_list, fn):
     """
     organism_dict_list = []
     for organism in organism_list:
-        organism_dict = vars(organism)
+        organism_dict = organism.to_dict()
+
         # Make sure we're not serializing the loaded modules themselves
-        del organism_dict['custom_modules']
+        if 'custom_modules' in organism_dict.keys():
+            del organism_dict['custom_modules']
+
         organism_dict_list.append(organism_dict)
     with open(fn, 'w') as f:
         json.dump(organism_dict_list, f, indent=2)

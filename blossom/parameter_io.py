@@ -12,7 +12,7 @@ import copy
 from utils import cast_to_list
 from world import World
 from organism import Organism
-import fields
+import default_fields
 
 
 def load_world(fn=None, init_dict={}):
@@ -40,8 +40,8 @@ def load_world(fn=None, init_dict={}):
 
 def load_world_from_dict(init_dict):
     world_init_dict = {}
-    for (prop, default) in fields.world_field_names.items():
-        world_init_dict[prop] = init_dict.get(prop, default)
+    for (field, default) in default_fields.world_fields.items():
+        world_init_dict[field] = init_dict.get(field, default)
     # Check world size parameters, set dimensionality value accordingly
     if type(world_init_dict['world_size']) is int:
         world_init_dict['world_size'] = [world_init_dict['world_size']]
@@ -54,7 +54,7 @@ def load_world_from_dict(init_dict):
 
     # Check that field list sizes are consistent with each other
     field_lengths = []
-    field_names = []
+    fields = []
     for field in ['water', 'food', 'obstacles']:
         if world_init_dict[field]:
             assert type(world_init_dict[field]) is list
@@ -67,15 +67,15 @@ def load_world_from_dict(init_dict):
                 else:
                     assert type(i) in [int, float]
             field_lengths.append(len(world_init_dict[field]))
-            field_names.append(field)
+            fields.append(field)
     if len(field_lengths) >= 2:
         assert field_lengths[0] == field_lengths[1]
     if len(field_lengths) == 3:
         assert field_lengths[1] == field_lengths[2]
 
     # Check that field list sizes are consistent with the world size
-    if len(field_names) >= 1:
-        field = field_names[0]
+    if len(fields) >= 1:
+        field = fields[0]
         assert world_init_dict['world_size'][0] == len(world_init_dict[field])
         if len(field) == 2:
             assert world_init_dict['world_size'][1] \
@@ -128,7 +128,7 @@ def load_world_from_param_file(fn):
         if type(world_init_dict['water'][0]) is list:
             world_init_dict['dimensionality'] = 2
             world_init_dict['world_size'] = [len(world_init_dict['water']),
-                                        len(world_init_dict['water'][0])]
+                                             len(world_init_dict['water'][0])]
         else:
             world_init_dict['dimensionality'] = 1
             world_init_dict['world_size'] = [len(world_init_dict['water'])]
@@ -162,6 +162,44 @@ def load_world_from_param_file(fn):
     return World(world_init_dict)
 
 
+def load_species(fns=None,
+                 init_dicts=[{}],
+                 init_world=World({}),
+                 custom_module_fns=[]):
+    """
+    Load organisms from available species parameter files or dictionaries.
+
+    Parameters
+    ----------
+    fns : list of str
+        Input filenames of species parameter files. Different species get
+        different species parameter files, from which the individual organisms
+        are initialized.
+    init_dicts : list of dict
+        Parameter dicts for each species.
+    init_world : World
+        Initial World instance for this Universe.
+    custom_module_fns : list of str
+        List of external Python scripts containing custom organism
+        behaviors. :mod:`blossom` will search for methods within each
+        filename included here.
+
+    Returns
+    -------
+    organism_list : list of Organisms
+        A list of Organism objects constructed from the parameter file.
+
+    """
+    if fns:
+        return load_species_from_param_files(fns,
+                                             init_world,
+                                             custom_module_fns)
+    else:
+        return load_species_from_dict(init_dicts,
+                                      init_world,
+                                      custom_module_fns)
+
+
 def create_organisms(species_init_dict,
                      init_world=World({}),
                      position_callback=None):
@@ -173,10 +211,13 @@ def create_organisms(species_init_dict,
     list_field_keys = []
     for key in species_init_dict.keys():
         if type(species_init_dict[key]) is list:
-            if key != 'custom_methods_fns':
+            if key != 'custom_module_fns':
                 list_field_keys.append(key)
+
     # Generate all organisms
-    for i in range(species_init_dict['population_size']):
+    initial_population = species_init_dict['population_size']
+    del species_init_dict['population_size']
+    for i in range(initial_population):
         organism_init_dict = copy.deepcopy(species_init_dict)
         for key in list_field_keys:
             organism_init_dict[key] = organism_init_dict[key][i]
@@ -201,47 +242,9 @@ def create_organisms(species_init_dict,
     return organism_list
 
 
-def load_species(fns=None,
-                 init_dicts=[{}],
-                 init_world=World({}),
-                 custom_methods_fns=[]):
-    """
-    Load organisms from available species parameter files or dictionaries.
-
-    Parameters
-    ----------
-    fns : list of str
-        Input filenames of species parameter files. Different species get
-        different species parameter files, from which the individual organisms
-        are initialized.
-    init_dicts : list of dict
-        Parameter dicts for each species.
-    init_world : World
-        Initial World instance for this Universe.
-    custom_methods_fns : list of str
-        List of external Python scripts containing custom organism
-        behaviors. :mod:`blossom` will search for methods within each
-        filename included here.
-
-    Returns
-    -------
-    organism_list : list of Organisms
-        A list of Organism objects constructed from the parameter file.
-
-    """
-    if fns:
-        return load_species_from_param_files(fns,
-                                             init_world,
-                                             custom_methods_fns)
-    else:
-        return load_species_from_dict(init_dicts,
-                                      init_world,
-                                      custom_methods_fns)
-
-
 def load_species_from_dict(init_dicts,
                            init_world,
-                           custom_methods_fns=None):
+                           custom_module_fns=None):
     """
     Create a list of organisms loaded from Python dicts.
 
@@ -252,7 +255,7 @@ def load_species_from_dict(init_dicts,
         are initialized. Each dictionary is for a different species.
     init_world : World
         Initial World instance for this Universe.
-    custom_methods_fns : list of str
+    custom_module_fns : list of str
         List of external Python scripts containing custom organism
         behaviors. :mod:`blossom` will search for methods within each
         filename included here.
@@ -270,8 +273,16 @@ def load_species_from_dict(init_dicts,
     for init_dict in init_dicts:
 
         species_init_dict = {}
-        for (prop, default) in fields.species_field_names.items():
-            species_init_dict[prop] = init_dict.get(prop, default)
+
+        # Set up defaults based on species parameters
+        for (field, default) in default_fields.species_fields.items():
+            species_init_dict[field] = init_dict.get(field, default)
+
+        # Set up custom fields provided in initialization dictionary
+        init_keys = set(init_dict.keys())
+        default_keys = set(default_fields.species_fields.keys())
+        for custom_field in (init_keys - default_keys):
+            species_init_dict[custom_field] = init_dict[custom_field]
 
         assert 'population_size' in init_dict.keys()
         population_size = init_dict['population_size']
@@ -328,9 +339,9 @@ def load_species_from_dict(init_dicts,
             else:
                 assert species_init_dict[field] is None
 
-        if not species_init_dict['custom_methods_fns']:
+        if not species_init_dict['custom_module_fns']:
             # Track custom method file paths
-            species_init_dict['custom_methods_fns'] = custom_methods_fns
+            species_init_dict['custom_module_fns'] = custom_module_fns
 
         if 'initial_positions' in init_dict.keys():
             assert len(init_dict['initial_positions']) == population_size
@@ -346,7 +357,7 @@ def load_species_from_dict(init_dicts,
 
 def load_species_from_param_files(fns,
                                   init_world,
-                                  custom_methods_fns=None):
+                                  custom_module_fns=None):
     """
     Load all available species parameter files.
 
@@ -358,7 +369,7 @@ def load_species_from_param_files(fns,
         are initialized.
     init_world : World
         Initial World instance for this Universe.
-    custom_methods_fns : list of str
+    custom_module_fns : list of str
         List of external Python scripts containing custom organism
         behaviors. :mod:`blossom` will search for methods within each
         filename included here.
@@ -445,7 +456,7 @@ def load_species_from_param_files(fns,
                 species_init_dict[key] = val
 
         # Track custom method file paths
-        species_init_dict['custom_methods_fns'] = custom_methods_fns
+        species_init_dict['custom_module_fns'] = custom_module_fns
 
         organism_list.extend(create_organisms(species_init_dict,
                                               init_world))

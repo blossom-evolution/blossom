@@ -11,9 +11,9 @@ sys.path.append(os.path.dirname(__file__))
 from universe import Universe
 from organism import Organism
 from world import World
-from fields import world_field_names, \
-    specific_organism_field_names, species_field_names, \
-    organism_field_names
+from default_fields import world_fields, \
+    specific_organism_fields, species_fields, \
+    organism_fields
 import dataset_io
 import parameter_io
 

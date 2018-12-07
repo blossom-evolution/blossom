@@ -3,7 +3,7 @@ import glob
 import json
 import random
 
-import fields
+import default_fields
 from world import World
 from organism import Organism
 import hash_organism_list

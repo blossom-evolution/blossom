@@ -3,7 +3,7 @@ import copy
 import imp
 import sys
 
-import fields
+import default_fields
 from utils import cast_to_list
 from organism_behavior import movement, reproduction, drinking, eating, action
 
@@ -16,28 +16,46 @@ class Organism(object):
     def __init__(self, init_dict={}):
         """
         Create a new organism from a dictary of parameters. The dictionary
-        is specified in blossom.fields.
+        is specified in blossom.default_fields.
         """
-        # Sets up defaults based on organism parameters
-        for (prop, default) in fields.organism_field_names.items():
-            setattr(self, prop, init_dict.get(prop, default))
+        # Set up defaults based on organism parameters
+        for (field, default) in default_fields.organism_fields.items():
+            setattr(self, field, init_dict.get(field, default))
+
+        # Set up custom fields provided in initialization dictionary
+        init_keys = set(init_dict.keys())
+        default_keys = set(default_fields.organism_fields.keys())
+        for custom_field in (init_keys - default_keys):
+            setattr(self, custom_field, init_dict[custom_field])
 
         # Set unique id for organism
         if self.organism_id is None:
             self.organism_id = str(uuid.uuid4())
 
+        # Set current water level for uninitialized organism
         if self.drinking_type is not None and self.water_current is None:
             self.water_current = self.water_initial
 
+        # Set current food level for uninitialized organism
         if self.eating_type is not None and self.food_current is None:
             self.food_current = self.food_initial
 
         # Import custom modules / paths
-        if self.custom_methods_fns is not None:
-            self.custom_modules = []
-            for i, path in enumerate(cast_to_list(self.custom_methods_fns)):
+        if self.custom_module_fns is not None:
+            self._custom_modules = []
+            for i, path in enumerate(cast_to_list(self.custom_module_fns)):
                 temp_module = imp.load_source('%s' % i, path)
-                self.custom_modules.append(temp_module)
+                self._custom_modules.append(temp_module)
+
+    def to_dict(self):
+        """
+        Convert Organism to dict.
+        """
+        organism_vars = vars(self)
+        public_vars = {key: val
+                       for key, val in organism_vars.items()
+                       if not key.startswith('_')}
+        return public_vars
 
     @classmethod
     def clone(cls, organism):
@@ -54,7 +72,7 @@ class Organism(object):
         new_organism : Organism
             Copied organism.
         """
-        new_organism = cls(vars(organism))
+        new_organism = cls(organism.to_dict())
         # Use copy module to properly handle mutable lists
         new_organism.ancestry = copy.copy(new_organism.ancestry)
         new_organism.position = copy.copy(new_organism.position)
@@ -124,8 +142,8 @@ class Organism(object):
         """
         if self.movement_type is None:
             sys.exit('No movement type defined!')
-        elif self.custom_methods_fns is not None:
-            for custom_module in self.custom_modules:
+        elif self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
                 if hasattr(custom_module, self.movement_type):
                     return (getattr(custom_module, self.movement_type)
                             (self, organism_list, world,
@@ -156,8 +174,8 @@ class Organism(object):
         """
         if self.reproduction_type is None:
             sys.exit('No reproduction type defined!')
-        elif self.custom_methods_fns is not None:
-            for custom_module in self.custom_modules:
+        elif self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
                 if hasattr(custom_module, self.reproduction_type):
                     return (getattr(custom_module, self.reproduction_type)
                             (self, organism_list, world,
@@ -186,8 +204,8 @@ class Organism(object):
         """
         if self.drinking_type is None:
             sys.exit('No drinking type defined!')
-        elif self.custom_methods_fns is not None:
-            for custom_module in self.custom_modules:
+        elif self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
                 if hasattr(custom_module, self.drinking_type):
                     return (getattr(custom_module, self.drinking_type)
                             (self, organism_list, world,
@@ -216,8 +234,8 @@ class Organism(object):
         """
         if self.eating_type is None:
             sys.exit('No eating type defined!')
-        elif self.custom_methods_fns is not None:
-            for custom_module in self.custom_modules:
+        elif self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
                 if hasattr(custom_module, self.eating_type):
                     return (getattr(custom_module, self.eating_type)
                             (self, organism_list, world,
@@ -252,15 +270,19 @@ class Organism(object):
 
         """
         action_name = None
-        if self.custom_methods_fns is not None:
-            for custom_module in self.custom_modules:
+        if self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
                 if hasattr(custom_module, self.action_type):
                     action_name = (getattr(custom_module, self.action_type)
-                                   (self, organism_list, world, position_hash_table=position_hash_table))
+                                   (self, organism_list, world,
+                                    position_hash_table=position_hash_table))
         if action_name is None:
             action_name = (getattr(action, self.action_type)
-                           (self, organism_list, world, position_hash_table=position_hash_table))
-        return cast_to_list(getattr(self, action_name)(organism_list, world, position_hash_table=position_hash_table))
+                           (self, organism_list, world,
+                            position_hash_table=position_hash_table))
+        return cast_to_list(getattr(self, action_name)
+                            (organism_list, world,
+                             position_hash_table=position_hash_table))
 
     def _update_age(self):
         """

@@ -41,7 +41,7 @@ def save_world(world, fn):
         Output filename of saved world dataset.
     """
     with open(fn, 'w') as f:
-        json.dump(vars(world), f, indent=2)
+        json.dump(world.to_dict(), f, indent=2)
 
 
 def load_organisms(fn):
@@ -80,7 +80,7 @@ def save_organisms(organism_list, fn):
     """
     organism_dict_list = []
     for organism in organism_list:
-        organism_dict = vars(organism)
+        organism_dict = organism.to_dict()
 
         # Make sure we're not serializing the loaded modules themselves
         if 'custom_modules' in organism_dict.keys():

@@ -23,7 +23,7 @@ class Universe(object):
                  species_param_fns=None,
                  world_param_dict={},
                  species_param_dicts=[{}],
-                 custom_methods_fns=None,
+                 custom_module_fns=None,
                  current_time=0,
                  end_time=10,
                  dataset_dir='datasets/',
@@ -46,7 +46,7 @@ class Universe(object):
             Dictionary containing initial world parameters.
         species_param_dicts : list of dict
             List of dictionaries containing initial species parameters.
-        custom_methods_fns : list of str
+        custom_module_fns : list of str
             List of filenames of external python scripts containing custom
             behaviors.
         current_time : int
@@ -69,15 +69,15 @@ class Universe(object):
         self.organisms_ds_fn = organisms_ds_fn
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
-        self.custom_methods_fns = custom_methods_fns
+        self.custom_module_fns = custom_module_fns
 
         self.world_param_dict = world_param_dict
         self.species_param_dicts = species_param_dicts
 
-        if self.custom_methods_fns is not None:
-            self.custom_methods_fns = [os.path.abspath(path)
-                                       for path in self.custom_methods_fns
-                                       if os.path.isfile(path)]
+        if self.custom_module_fns is not None:
+            self.custom_module_fns = [os.path.abspath(path)
+                                      for path in self.custom_module_fns
+                                      if os.path.isfile(path)]
 
         self.dataset_dir = dataset_dir
         if dataset_dir[-1] != '/':
@@ -147,12 +147,12 @@ class Universe(object):
                 organism_list = pio.load_species(
                                     fns=self.species_param_fns,
                                     init_world=self.world,
-                                    custom_methods_fns=self.custom_methods_fns)
+                                    custom_module_fns=self.custom_module_fns)
             else:
                 organism_list = pio.load_species(
                                     init_dicts=self.species_param_dicts,
                                     init_world=self.world,
-                                    custom_methods_fns=self.custom_methods_fns)
+                                    custom_module_fns=self.custom_module_fns)
             output_fn = (self.dataset_dir + 'organisms_ds'
                          + str(self.current_time).zfill(self.pad_zeroes)
                          + self.file_extension)

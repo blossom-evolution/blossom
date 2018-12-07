@@ -1,13 +1,3 @@
-import os
-import glob
-import json
-import random
-
-import fields
-from world import World
-from organism import Organism
-
-
 def hash_by_id(organism_list):
     """
     Simple hashing by organism id over a list of organisms.

@@ -1,12 +1,4 @@
-import os
-import glob
-import json
-import random
-
-import default_fields
-from world import World
-from organism import Organism
-import hash_organism_list
+import organism_list_funcs
 
 
 def parse(intent_list, organism_list):
@@ -30,7 +22,7 @@ def parse(intent_list, organism_list):
     # TODO: Figure out exactly how this should be controlled -- on the scale of
     # the universe, the world, or the organisms itself
     updated_list = []
-    id_hash_table = hash_organism_list.hash_by_id(intent_list)
+    id_hash_table = organism_list_funcs.hash_by_id(intent_list)
     for id in id_hash_table.keys():
         if len(id_hash_table[id]) == 1:
             updated_list.extend(id_hash_table[id])

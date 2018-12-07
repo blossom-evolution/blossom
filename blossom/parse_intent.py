@@ -3,7 +3,8 @@ import organism_list_funcs
 
 def parse(intent_list, organism_list):
     """
-    Determine whether the intent list is valid and fix it otherwise.
+    Determine whether the intent list is valid and fix it in the event of
+    conflicts.
 
     Parameters
     ----------
@@ -18,6 +19,12 @@ def parse(intent_list, organism_list):
     updated_list : list of Organisms
         List of updated organisms with conflicts between intent_list and
         organism_list resolved.
+
+    Conflicts may be cases in which an organism has different states in the
+    intent list, perhaps arrising from the actions of other organisms that
+    somehow effect its state. This method resolves those conflicts, so that
+    there is only one organism with a given organism id present in the final
+    output list at all times.
     """
     # TODO: Figure out exactly how this should be controlled -- on the scale of
     # the universe, the world, or the organisms itself

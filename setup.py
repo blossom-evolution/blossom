@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='blossom',
-    version='1.1.0',
+    version='1.2.0',
     author='Bryan Brzycki',
     author_email='bbrzycki@berkeley.edu',
     description='A simple evolution simulator',

@@ -1,6 +1,7 @@
 import sys
 import os
 import errno
+from collections import Counter
 
 import time
 
@@ -99,6 +100,10 @@ class Universe(object):
         self.world = self.initialize_world()
         # organisms is a list of Organism objects
         self.organism_list = self.initialize_organisms()
+
+        self.species_names = set(organism.species_name
+                                 for organism in self.organism_list)
+        self.species_names = sorted(list(self.species_names))
         self.intent_list = []
 
     def initialize_world(self):
@@ -167,17 +172,25 @@ class Universe(object):
         """
         # Increment time step
         self.current_time += 1
-        organism_list = [organism.clone_self()._update_age()
-                         for organism in self.organism_list
-                         if organism.alive]
-        position_hash_table = (organism_list_funcs
-                               .hash_by_position(organism_list))
 
+        # This is just updating the age, not evaluating whether an organism
+        # is at death, since organism actions should be evaluated based on
+        # the current state. Age needs to be updated so that every organism
+        # in intent list has the correct age.
+        t_organism_list = [organism.clone_self()._update_age()
+                           for organism in self.organism_list
+                           if organism.alive]
+        position_hash_table = (organism_list_funcs
+                               .hash_by_position(t_organism_list))
+
+        # intent_list is a list of lists, one list per organism in the current
+        # time step
         self.intent_list = []
         for organism in self.organism_list:
             if organism.alive:
-                self.intent_list.extend(
-                    organism.step(organism_list,
+                # currently t_organism_list isn't used by any actions...
+                self.intent_list.append(
+                    organism.step(t_organism_list,
                                   self.world,
                                   position_hash_table=position_hash_table)
                 )
@@ -212,13 +225,29 @@ class Universe(object):
             else:
                 rt_pstring = 't = %s: %s organisms' % (self.current_time,
                                                        len(self.organism_list))
+        if verbosity >= 4:
+            counter = Counter([org.species_name for org in self.organism_list])
+            if expanded:
+                for species_name in self.species_names:
+                    pstring += (
+                        '    %s: %d organisms\n'
+                        % (species_name, counter[species_name])
+                    )
+            else:
+                rt_pstring = rt_pstring + ' ('
+                for i, species_name in enumerate(self.species_names):
+                    rt_pstring += str(counter[species_name])
+                    if i != len(self.species_names) - 1:
+                        rt_pstring += ':'
+                rt_pstring += ')'
+
         if verbosity >= 2:
             now = time.time()
             last_time_diff = now - self.last_timestamp
             self.last_timestamp = now
             if expanded:
                 pstring += (
-                    '    Time elapsed since last timestep: %s\n'
+                    '    Time elapsed since last time step: %s\n'
                     % utils.time_to_string(last_time_diff)
                 )
             else:
@@ -239,6 +268,7 @@ class Universe(object):
                     % (utils.time_to_string(last_time_diff),
                        utils.time_to_string(start_time_diff))
                 )
+
         return pstring
 
     def run(self, verbosity=1, expanded=True):

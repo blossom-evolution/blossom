@@ -83,7 +83,7 @@ def save_organisms(organism_list, fn):
         organism_dict = organism.to_dict()
 
         # Make sure we're not serializing the loaded modules themselves
-        if 'custom_modules' in organism_dict.keys():
+        if 'custom_modules' in organism_dict:
             del organism_dict['custom_modules']
 
         organism_dict_list.append(organism_dict)

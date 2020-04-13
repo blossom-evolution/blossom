@@ -221,11 +221,11 @@ def create_organisms(species_init_dict,
         organism_init_dict = copy.deepcopy(species_init_dict)
         for key in list_field_keys:
             organism_init_dict[key] = organism_init_dict[key][i]
-        if 'initial_positions' in species_init_dict.keys():
+        if 'initial_positions' in species_init_dict:
             position = organism_init_dict['initial_positions']
         elif position_callback:
             position = position_callback(init_world.world_size)
-        elif 'position_callback' in species_init_dict.keys():
+        elif 'position_callback' in species_init_dict:
             position = (species_init_dict['position_callback']
                         (init_world.world_size))
         else:
@@ -284,7 +284,7 @@ def load_species_from_dict(init_dicts,
         for custom_field in (init_keys - default_keys):
             species_init_dict[custom_field] = init_dict[custom_field]
 
-        assert 'population_size' in init_dict.keys()
+        assert 'population_size' in init_dict
         population_size = init_dict['population_size']
         assert type(population_size) is int
         species_init_dict['population_size'] = population_size
@@ -343,7 +343,7 @@ def load_species_from_dict(init_dicts,
             # Track custom method file paths
             species_init_dict['custom_module_fns'] = custom_module_fns
 
-        if 'initial_positions' in init_dict.keys():
+        if 'initial_positions' in init_dict:
             assert len(init_dict['initial_positions']) == population_size
             for position in init_dict['initial_positions']:
                 assert len(position) == init_world.dimensionality

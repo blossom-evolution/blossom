@@ -1,3 +1,4 @@
+import random
 import organism_list_funcs
 
 
@@ -29,21 +30,21 @@ def parse(intent_list, organism_list):
     # TODO: Figure out exactly how this should be controlled -- on the scale of
     # the universe, the world, or the organisms itself
     updated_list = []
-    id_hash_table = organism_list_funcs.hash_by_id(intent_list)
-    for id in id_hash_table.keys():
-        if len(id_hash_table[id]) == 1:
-            updated_list.extend(id_hash_table[id])
-        else:
-            selected = False
-            for organism in id_hash_table[id]:
-                # If organism died in this timestep, add it to the list.
-                if organism.age_at_death == organism.age:
-                    updated_list.append(organism)
-                    selected = True
-                    break
-            if not selected:
-                # If no organism died, then find first available organism.
-                # For more complicated circumstances, this may need to be
-                # extended.
-                updated_list.append(id_hash_table[id][0])
+
+    id_org_dict = dict((org.organism_id, org) for org in organism_list)
+    new_organism_ids = set()
+
+    # Randomly sample organism steps to select
+    for organism_set in random.sample(intent_list, len(intent_list)):
+        set_ids = set(org.organism_id for org in organism_set)
+        if len(new_organism_ids & set_ids) == 0:
+            updated_list.extend(organism_set)
+            new_organism_ids.update(set(org.organism_id for org in organism_set))
+
+    # Add back organisms whose steps were not chosen (and increment status)
+    for id in (set(id_org_dict.keys()) - new_organism_ids):
+        org = id_org_dict[id]
+        if org.alive:
+            updated_list.append(id_org_dict[id].step_without_acting())
+
     return updated_list

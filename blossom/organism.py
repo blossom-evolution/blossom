@@ -84,7 +84,7 @@ class Organism(object):
         """
         return self.clone(self)
 
-    def update_parameter(self, parameter, value, method='set', original=None):
+    def update_parameter(self, parameter, value, method='set', in_place=False, original=None):
         """
         Update a specific parameter of the organism.
 
@@ -95,7 +95,10 @@ class Organism(object):
         value
             Value with which to update.
         method : string
-            Method types are: 'set', 'add', 'subtract'.
+            Method types are: 'set', 'add', 'subtract', 'append'.
+        in_place : bool
+            If True, modifies self, otherwise, copy organism and return new
+            Organism object.
         original : Organism or None
             Original organism we are changing. If it is the original,
             clone organism so that we aren't editing the original.
@@ -105,7 +108,7 @@ class Organism(object):
         updated_organism : Organism
             Organism object with updated parameter.
         """
-        if self is original:
+        if self is original or not in_place:
             updated_organism = self.clone_self()
         else:
             updated_organism = self
@@ -140,17 +143,31 @@ class Organism(object):
         affected_organisms : Organisms, or list of Organisms
             Organism or list of organisms affected by this organism's movement.
         """
-        if self.movement_type is None:
-            sys.exit('No movement type defined!')
-        elif self.custom_module_fns is not None:
-            for custom_module in self._custom_modules:
-                if hasattr(custom_module, self.movement_type):
-                    return (getattr(custom_module, self.movement_type)
-                            (self, organism_list, world,
-                             position_hash_table=position_hash_table))
-        return (getattr(movement, self.movement_type)
-                (self, organism_list, world,
-                 position_hash_table=position_hash_table))
+        try:
+            if self.movement_type is None:
+                sys.exit('No movement type defined!')
+            elif self.custom_module_fns is not None:
+                for custom_module in self._custom_modules:
+                    if hasattr(custom_module, self.movement_type):
+                        return getattr(custom_module, self.movement_type)(
+                            self,
+                            organism_list,
+                            world,
+                            position_hash_table=position_hash_table
+                        )
+            return getattr(movement, self.movement_type)(
+                self,
+                organism_list,
+                world,
+                position_hash_table=position_hash_table
+            )
+        except AttributeError as e:
+            raise AttributeError(
+                str(e)
+                + '. Check that \'%s\' method is indeed ' % self.movement_type
+                + 'contained within the provided custom modules and that the '
+                + 'method is written correctly.'
+            ).with_traceback(sys.exc_info()[2])
 
     def reproduce(self, organism_list, world, position_hash_table=None):
         """
@@ -172,17 +189,31 @@ class Organism(object):
             child organisms.
 
         """
-        if self.reproduction_type is None:
-            sys.exit('No reproduction type defined!')
-        elif self.custom_module_fns is not None:
-            for custom_module in self._custom_modules:
-                if hasattr(custom_module, self.reproduction_type):
-                    return (getattr(custom_module, self.reproduction_type)
-                            (self, organism_list, world,
-                             position_hash_table=position_hash_table))
-        return (getattr(reproduction, self.reproduction_type)
-                (self, organism_list, world,
-                 position_hash_table=position_hash_table))
+        try:
+            if self.reproduction_type is None:
+                sys.exit('No reproduction type defined!')
+            elif self.custom_module_fns is not None:
+                for custom_module in self._custom_modules:
+                    if hasattr(custom_module, self.reproduction_type):
+                        return getattr(custom_module, self.reproduction_type)(
+                            self,
+                            organism_list,
+                            world,
+                            position_hash_table=position_hash_table
+                        )
+            return getattr(reproduction, self.reproduction_type)(
+                self,
+                organism_list,
+                world,
+                position_hash_table=position_hash_table
+            )
+        except AttributeError as e:
+            raise AttributeError(
+                str(e) + '. Check '
+                + 'that \'%s\' method is indeed ' % self.reproduction_type
+                + 'contained within the provided custom modules and that the '
+                + 'method is written correctly.'
+            ).with_traceback(sys.exc_info()[2])
 
     def drink(self, organism_list, world, position_hash_table=None):
         """
@@ -202,17 +233,31 @@ class Organism(object):
             Organism or list of organisms affected by this organism's drinking.
 
         """
-        if self.drinking_type is None:
-            sys.exit('No drinking type defined!')
-        elif self.custom_module_fns is not None:
-            for custom_module in self._custom_modules:
-                if hasattr(custom_module, self.drinking_type):
-                    return (getattr(custom_module, self.drinking_type)
-                            (self, organism_list, world,
-                             position_hash_table=position_hash_table))
-        return (getattr(drinking, self.drinking_type)
-                (self, organism_list, world,
-                 position_hash_table=position_hash_table))
+        try:
+            if self.drinking_type is None:
+                sys.exit('No drinking type defined!')
+            elif self.custom_module_fns is not None:
+                for custom_module in self._custom_modules:
+                    if hasattr(custom_module, self.drinking_type):
+                        return getattr(custom_module, self.drinking_type)(
+                            self,
+                            organism_list,
+                            world,
+                            position_hash_table=position_hash_table
+                        )
+            return getattr(drinking, self.drinking_type)(
+                self,
+                organism_list,
+                world,
+                position_hash_table=position_hash_table
+            )
+        except AttributeError as e:
+            raise AttributeError(
+                str(e)
+                + '. Check that \'%s\' method is indeed ' % self.drinking_type
+                + 'contained within the provided custom modules and that the '
+                + 'method is written correctly.'
+            ).with_traceback(sys.exc_info()[2])
 
     def eat(self, organism_list, world, position_hash_table=None):
         """
@@ -232,20 +277,31 @@ class Organism(object):
             Organism or list of organisms affected by this organism's eating.
 
         """
-        if self.eating_type is None:
-            sys.exit('No eating type defined!')
-        elif self.custom_module_fns is not None:
-            for custom_module in self._custom_modules:
-                if hasattr(custom_module, self.eating_type):
-                    return (getattr(custom_module, self.eating_type)
-                            (self, organism_list, world,
-                             position_hash_table=position_hash_table))
-        return getattr(eating, self.eating_type)(
-            self,
-            organism_list,
-            world,
-            position_hash_table=position_hash_table
-        )
+        try:
+            if self.eating_type is None:
+                sys.exit('No eating type defined!')
+            elif self.custom_module_fns is not None:
+                for custom_module in self._custom_modules:
+                    if hasattr(custom_module, self.eating_type):
+                        return getattr(custom_module, self.eating_type)(
+                            self,
+                            organism_list,
+                            world,
+                            position_hash_table=position_hash_table
+                        )
+            return getattr(eating, self.eating_type)(
+                self,
+                organism_list,
+                world,
+                position_hash_table=position_hash_table
+            )
+        except AttributeError as e:
+            raise AttributeError(
+                str(e)
+                + '. Check that \'%s\' method is indeed ' % self.eating_type
+                + 'contained within the provided custom modules and that the '
+                + 'method is written correctly.'
+            ).with_traceback(sys.exc_info()[2])
 
     def act(self, organism_list, world, position_hash_table=None):
         """
@@ -270,16 +326,30 @@ class Organism(object):
 
         """
         action_name = None
-        if self.custom_module_fns is not None:
-            for custom_module in self._custom_modules:
-                if hasattr(custom_module, self.action_type):
-                    action_name = (getattr(custom_module, self.action_type)
-                                   (self, organism_list, world,
-                                    position_hash_table=position_hash_table))
-        if action_name is None:
-            action_name = (getattr(action, self.action_type)
-                           (self, organism_list, world,
-                            position_hash_table=position_hash_table))
+        try:
+            if self.custom_module_fns is not None:
+                for custom_module in self._custom_modules:
+                    if hasattr(custom_module, self.action_type):
+                        action_name = getattr(custom_module, self.action_type)(
+                            self,
+                            organism_list,
+                            world,
+                            position_hash_table=position_hash_table
+                        )
+            if action_name is None:
+                action_name = getattr(action, self.action_type)(
+                    self,
+                    organism_list,
+                    world,
+                    position_hash_table=position_hash_table
+                )
+        except AttributeError as e:
+            raise AttributeError(
+                str(e)
+                + '. Check that \'%s\' method is indeed ' % self.action_type
+                + 'contained within the provided custom modules and that the '
+                + 'method is written correctly.'
+            ).with_traceback(sys.exc_info()[2])
 
         self.last_action = action_name
 
@@ -295,7 +365,8 @@ class Organism(object):
             if org.organism_id == self.organism_id:
                 already_included = True
         if not already_included:
-            self.die('unknown')
+            # e.g. unknown reason for exlusion, so default to death
+            self.die('unknown', in_place=True)
             affected_organisms.append(self)
 
         return self, affected_organisms
@@ -345,7 +416,7 @@ class Organism(object):
             self.time_without_food = 0
         return self
 
-    def at_death(self, cause):
+    def is_at_death(self, cause):
         """
         Check various conditions for death.
 
@@ -371,7 +442,7 @@ class Organism(object):
         else:
             sys.exit('Invalid cause!')
 
-    def die(self, cause, original=None):
+    def die(self, cause, in_place=False, original=None):
         """
         Method that "kills" organism.
 
@@ -379,6 +450,9 @@ class Organism(object):
         ----------
         cause : str
             Cause of this organism's death.
+        in_place : bool
+            If True, modifies self, otherwise, copy organism and return new
+            Organism object.
 
         Returns
         -------
@@ -387,13 +461,19 @@ class Organism(object):
         """
         updated_organism = self.update_parameter('alive',
                                                  False,
+                                                 in_place=in_place,
                                                  original=original)
-        updated_organism.update_parameter('age_at_death',
-                                          self.age)
-        updated_organism.update_parameter('cause_of_death', cause)
+        updated_organism = updated_organism.update_parameter('age_at_death',
+                                                             self.age,
+                                                             in_place=in_place,
+                                                             original=original)
+        updated_organism = updated_organism.update_parameter('cause_of_death',
+                                                             cause,
+                                                             in_place=in_place,
+                                                             original=original)
         return updated_organism
 
-    def step(self, organism_list, world, position_hash_table=None):
+    def step(self, organism_list, world, position_hash_table=None, do_action=True):
         """
         Steps through one time step for this organism. Reflects changes
         based on actions / behaviors and updates to health parameters.
@@ -407,11 +487,15 @@ class Organism(object):
             List of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table: dict
+            Dictionary of organisms "hashed" by position.
+        do_action: bool
+            If True, this organism will act, otherwise, it will not.
 
         Returns
         -------
         affected_organisms : list of Organisms
-            Organism or list of organisms affected by this organism's actions
+            List of organisms affected by this organism's actions
             or health. This could be an updated version of this organism,
             especially if the organism dies during the time step, but could
             also be multiple other organisms affected by actions (i.e. children
@@ -420,35 +504,51 @@ class Organism(object):
         """
         # Create new Organism object / reference and update age
         organism = self.clone_self()._update_age()
-        if organism.alive:
-            if not organism.at_death('old_age'):
 
-                organism, affected_organisms = organism.act(
-                    organism_list,
-                    world,
-                    position_hash_table=position_hash_table
-                )
+        if organism.is_at_death('old_age'):
+            # This organism is at death from old age
+            # Design choice to prevent action if organism is at old age limit
+            return [organism.die('old_age')]
 
-                # Update health
+        if do_action:
+            organism, affected_organisms = organism.act(
+                organism_list,
+                world,
+                position_hash_table=position_hash_table
+            )
+        else:
+            affected_organisms = [organism]
+
+        for organism in affected_organisms:
+            # Checks whether alive after action
+            if organism.alive:
+                if organism.is_at_death('old_age'):
+                    organism.die('old_age', in_place=True)
+
+                # Update and check water / food status
                 if organism.drinking_type is not None:
                     organism._update_water()
+                    if organism.is_at_death('thirst'):
+                        organism.die('thirst', in_place=True)
+
                 if organism.eating_type is not None:
                     organism._update_food()
+                    if organism.is_at_death('hunger'):
+                        organism.die('hunger', in_place=True)
 
-                if organism.alive:
-                    # Check water / food status
-                    if organism.drinking_type is not None:
-                        if organism.at_death('thirst'):
-                            organism.die('thirst')
-                    if organism.eating_type is not None:
-                        if organism.at_death('hunger'):
-                            organism.die('hunger')
+        return affected_organisms
 
-                return affected_organisms
-            else:
-                # This organism is at death from old age
-                return [organism.die('old_age')]
-        else:
-            # Organism status already set to dead, so return organism
-            # (with 'age' incremented)
-            return [organism]
+    def step_without_acting(self):
+        """
+        Steps through one time step without acting for this organism.
+
+        Returns
+        -------
+        organism
+            Note that this returns an Organism object, not a list.
+
+        """
+        return self.step(organism_list=None,
+                         world=None,
+                         position_hash_table=None,
+                         do_action=False)[0]

@@ -45,6 +45,6 @@ def parse(intent_list, organism_list):
     for id in (set(id_org_dict.keys()) - new_organism_ids):
         org = id_org_dict[id]
         if org.alive:
-            updated_list.append(id_org_dict[id].step_without_acting())
+            updated_list.append(org.step_without_acting())
 
     return updated_list

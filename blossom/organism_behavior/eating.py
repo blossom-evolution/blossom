@@ -1,7 +1,7 @@
 import sys
 
 
-def constant_eat(organism, organism_list, world, position_hash_table=None):
+def constant_eat(organism, population_dict, world, position_hash_table=None):
     """
     Intake constant amount of food from world if food is present.
     """

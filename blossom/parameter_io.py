@@ -186,8 +186,8 @@ def load_species(fns=None,
 
     Returns
     -------
-    organism_list : list of Organisms
-        A list of Organism objects constructed from the parameter file.
+    population_dict : dict of Organisms
+        A dict of Organism objects constructed from the parameter file.
 
     """
     if fns:
@@ -205,7 +205,7 @@ def create_organisms(species_init_dict,
                      position_callback=None):
     '''
     Make organism list from an species_init_dict either provided directly or
-    scraped from parameter file.
+    scraped from parameter file. All organisms are from a single species.
     '''
     organism_list = []
     list_field_keys = []
@@ -216,9 +216,11 @@ def create_organisms(species_init_dict,
 
     # Generate all organisms
     initial_population = species_init_dict['population_size']
-    del species_init_dict['population_size']
     for i in range(initial_population):
-        organism_init_dict = copy.deepcopy(species_init_dict)
+        organism_init_dict = {
+            key: val for key, val in species_init_dict.items()
+            if not key == 'population_size'
+        }
         for key in list_field_keys:
             organism_init_dict[key] = organism_init_dict[key][i]
         if 'initial_positions' in species_init_dict:
@@ -262,14 +264,13 @@ def load_species_from_dict(init_dicts,
 
     Returns
     -------
-    organism_list : list of Organisms
-        A list of Organism objects constructed from the parameter file.
+    population_dict : dict of Organisms
+        A dict of Organism objects constructed from the parameter file.
 
     """
-
     init_dicts = cast_to_list(init_dicts)
 
-    organism_list = []
+    population_dict = {}
     for init_dict in init_dicts:
 
         species_init_dict = {}
@@ -350,9 +351,19 @@ def load_species_from_dict(init_dicts,
             species_init_dict['initial_positions'] \
                 = init_dict['initial_positions']
 
-        organism_list.extend(create_organisms(species_init_dict, init_world))
+        species_organism_list = create_organisms(species_init_dict, init_world)
 
-    return organism_list
+        # Populate population dict with relevant bulk stats and organism lists
+        population_dict[species_init_dict['species_name']] = {
+            'statistics': {
+                'count': population_size,
+                'alive_count': population_size,
+                'dead_count': 0
+            },
+            'organisms': species_organism_list
+        }
+
+    return population_dict
 
 
 def load_species_from_param_files(fns,
@@ -376,8 +387,8 @@ def load_species_from_param_files(fns,
 
     Returns
     -------
-    organism_list : list of Organisms
-        A list of Organism objects constructed from the parameter file.
+    population_dict : dict of Organisms
+        A dict of Organism objects constructed from the parameter file.
 
     """
 
@@ -387,7 +398,7 @@ def load_species_from_param_files(fns,
 
     # Initialize list of dictionaries to hold all organism parameters
     # Each dictionary contains parameters for a single species
-    organism_list = []
+    population_dict = {}
     for i, org_file in enumerate(org_files):
         # Initialize temporary dict to store species parameters
         species_init_dict = {}
@@ -458,7 +469,16 @@ def load_species_from_param_files(fns,
         # Track custom method file paths
         species_init_dict['custom_module_fns'] = custom_module_fns
 
-        organism_list.extend(create_organisms(species_init_dict,
-                                              init_world))
+        species_organism_list = create_organisms(species_init_dict, init_world)
 
-    return organism_list
+        # Populate population dict with relevant bulk stats and organism lists
+        population_dict[species_init_dict['species_name']] = {
+            'statistics': {
+                'count': species_init_dict['population_size'],
+                'alive_count': species_init_dict['population_size'],
+                'dead_count': 0
+            },
+            'organisms': species_organism_list
+        }
+
+    return population_dict

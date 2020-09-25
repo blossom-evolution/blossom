@@ -3,10 +3,12 @@ Load information from a certain dataset, e.g. to resume a simulation, and
 write world and organism data back to file.
 """
 
+import copy
 import json
 
 from world import World
 from organism import Organism
+import population_funcs
 
 
 def load_world(fn):
@@ -56,36 +58,43 @@ def load_organisms(fn):
 
     Returns
     -------
-    organism_list : list of Organisms
-        A list of Organism objects reconstructed from the saved dataset.
+    population_dict : dict
+        A dict of Organism objects reconstructed from the saved dataset.
     """
     with open(fn, 'r') as f:
-        organism_dict_list = json.load(f)
-    organism_list = [Organism(organism_dict)
-                     for organism_dict in organism_dict_list]
-    return organism_list
+        population_dict_json = json.load(f)
+
+    population_dict = {}
+    for species in population_dict_json:
+        population_dict[species] = {}
+        population_dict[species]['statistics'] = copy.deepcopy(population_dict_json[species]['statistics'])
+        population_dict[species]['organisms'] = [
+            Organism(organism_dict)
+            for organism_dict in population_dict_json[species]['organisms']
+        ]
+    return population_dict
 
 
-def save_organisms(organism_list, fn):
+def save_organisms(population_dict, fn):
     """
-    Write organism data from list of Organism objects to file in JSON
+    Write organism data from dict of Organism objects to file in JSON
     format.
 
     Parameters
     ----------
-    organism_list : list of Organisms
-        List of Organisms to write to file.
+    population_dict : dict
+        Dict of Organisms to write to file.
     fn : str
         Output filename of saved organism dataset.
     """
-    organism_dict_list = []
-    for organism in organism_list:
-        organism_dict = organism.to_dict()
+    population_dict_json = {}
+    for species in population_dict:
+        population_dict_json[species] = {}
+        population_dict_json[species]['statistics'] = copy.deepcopy(population_dict[species]['statistics'])
+        population_dict_json[species]['organisms'] = [
+            organism.to_dict()
+            for organism in population_dict[species]['organisms']
+        ]
 
-        # Make sure we're not serializing the loaded modules themselves
-        # if 'custom_modules' in organism_dict:
-        #     del organism_dict['custom_modules']
-
-        organism_dict_list.append(organism_dict)
     with open(fn, 'w') as f:
-        json.dump(organism_dict_list, f, indent=2)
+        json.dump(population_dict_json, f, indent=2)

@@ -9,7 +9,7 @@ import parse_intent
 import utils
 import dataset_io as dio
 import parameter_io as pio
-import organism_list_funcs
+import population_funcs
 
 
 class Universe(object):
@@ -28,7 +28,7 @@ class Universe(object):
                  current_time=0,
                  end_time=10,
                  dataset_dir='datasets/',
-                 pad_zeroes=0,
+                 pad_zeros=0,
                  file_extension='.txt'):
         """
         Initialize universe based on either parameter files or saved datasets.
@@ -56,7 +56,7 @@ class Universe(object):
             End time of simulation.
         dataset_dir : str
             Directory path for saving all world and organism datasets.
-        pad_zeroes : int
+        pad_zeros : int
             Number of zeroes to pad in dataset filenames.
         file_extension : str
             File extension for saving dataset files. Should generally be '.txt'
@@ -91,19 +91,18 @@ class Universe(object):
 
         self.current_time = current_time
         self.end_time = end_time
-        self.pad_zeroes = pad_zeroes
-        while (self.end_time - self.current_time) >= 10 ** self.pad_zeroes:
-            self.pad_zeroes += 1
+        self.pad_zeros = pad_zeros
+        # while (self.end_time - self.current_time) >= 10 ** self.pad_zeros:
+        #     self.pad_zeros += 1
         self.file_extension = file_extension
 
         # world is a World object
         self.world = self.initialize_world()
-        # organisms is a list of Organism objects
-        self.organism_list = self.initialize_organisms()
+        # population_dict is a list of Organism objects
+        self.population_dict = self.initialize_organisms()
 
-        self.species_names = set(organism.species_name
-                                 for organism in self.organism_list)
-        self.species_names = sorted(list(self.species_names))
+        self.species_names = sorted(list(self.population_dict.keys()))
+
         self.intent_list = []
 
     def initialize_world(self):
@@ -127,7 +126,7 @@ class Universe(object):
             else:
                 world = pio.load_world(init_dict=self.world_param_dict)
             output_fn = (self.dataset_dir + 'world_ds'
-                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + str(self.current_time).zfill(self.pad_zeros)
                          + self.file_extension)
             dio.save_world(world, output_fn)
         return world
@@ -140,29 +139,29 @@ class Universe(object):
 
         Returns
         -------
-        organism_list : list of Organisms
-            List of organisms at the beginning of the simulation.
+        population_dict : dict
+            Dict of organisms at the beginning of the simulation.
         """
         if self.organisms_ds_fn is not None:
             # Set up all organisms based on organism records
-            organism_list = dio.load_organisms(self.organisms_ds_fn)
+            population_dict = dio.load_organisms(self.organisms_ds_fn)
         else:
             if self.species_param_fns is not None:
                 # Set up all organisms based on species specifications
-                organism_list = pio.load_species(
-                                    fns=self.species_param_fns,
-                                    init_world=self.world,
-                                    custom_module_fns=self.custom_module_fns)
+                population_dict = pio.load_species(
+                                      fns=self.species_param_fns,
+                                      init_world=self.world,
+                                      custom_module_fns=self.custom_module_fns)
             else:
-                organism_list = pio.load_species(
-                                    init_dicts=self.species_param_dicts,
-                                    init_world=self.world,
-                                    custom_module_fns=self.custom_module_fns)
+                population_dict = pio.load_species(
+                                      init_dicts=self.species_param_dicts,
+                                      init_world=self.world,
+                                      custom_module_fns=self.custom_module_fns)
             output_fn = (self.dataset_dir + 'organisms_ds'
-                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + str(self.current_time).zfill(self.pad_zeros)
                          + self.file_extension)
-            dio.save_organisms(organism_list, output_fn)
-        return organism_list
+            dio.save_organisms(population_dict, output_fn)
+        return population_dict
 
     def step(self):
         """
@@ -177,66 +176,69 @@ class Universe(object):
         # is at death, since organism actions should be evaluated based on
         # the current state. Age needs to be updated so that every organism
         # in intent list has the correct age.
+        organism_list = population_funcs.get_organism_list(self.population_dict)
         t_organism_list = [organism.clone_self()._update_age()
-                           for organism in self.organism_list
+                           for organism in organism_list
                            if organism.alive]
-        position_hash_table = (organism_list_funcs
+        position_hash_table = (population_funcs
                                .hash_by_position(t_organism_list))
 
         # intent_list is a list of lists, one list per organism in the current
         # time step
         self.intent_list = []
-        for organism in self.organism_list:
+        for organism in organism_list:
             if organism.alive:
                 # currently t_organism_list isn't used by any actions...
                 self.intent_list.append(
-                    organism.step(t_organism_list,
+                    organism.step(population_funcs.get_population_dict(t_organism_list,
+                                                                       self.species_names),
                                   self.world,
                                   position_hash_table=position_hash_table)
                 )
 
         # Parse intent list and ensure it is valid
-        # Decide whether this should be self.organism_list or organism_list
-        self.organism_list = parse_intent.parse(self.intent_list,
-                                                self.organism_list)
+        self.population_dict = parse_intent.parse(self.intent_list,
+                                                  self.population_dict)
 
         org_output_fn = (self.dataset_dir + 'organisms_ds'
-                         + str(self.current_time).zfill(self.pad_zeroes)
+                         + str(self.current_time).zfill(self.pad_zeros)
                          + self.file_extension)
-        dio.save_organisms(self.organism_list, org_output_fn)
+        dio.save_organisms(self.population_dict, org_output_fn)
 
         world_output_fn = (self.dataset_dir + 'world_ds'
-                           + str(self.current_time).zfill(self.pad_zeroes)
+                           + str(self.current_time).zfill(self.pad_zeros)
                            + self.file_extension)
         # Potential changes to the world would go here
         dio.save_world(self.world, world_output_fn)
 
     def current_info(self, verbosity=1, expanded=True):
+        total_num = sum([self.population_dict[species]['statistics']['count']
+                         for species in self.species_names])
+
         pstring = 't = %s' % (self.current_time)
         if verbosity >= 1:
             if expanded:
                 pstring = (
                     '... t = %s\n'
-                    % str(self.current_time).zfill(self.pad_zeroes)
+                    % str(self.current_time).zfill(self.pad_zeros)
 
                     + '    Number of organisms: %s\n'
-                      % len(self.organism_list)
+                      % total_num
                 )
             else:
                 rt_pstring = 't = %s: %s organisms' % (self.current_time,
-                                                       len(self.organism_list))
+                                                       total_num)
         if verbosity >= 4:
-            counter = Counter([org.species_name for org in self.organism_list])
             if expanded:
                 for species_name in self.species_names:
                     pstring += (
                         '    %s: %d organisms\n'
-                        % (species_name, counter[species_name])
+                        % (species_name, self.population_dict[species_name]['statistics']['count'])
                     )
             else:
                 rt_pstring = rt_pstring + ' ('
                 for i, species_name in enumerate(self.species_names):
-                    rt_pstring += str(counter[species_name])
+                    rt_pstring += str(self.population_dict[species_name]['statistics']['count'])
                     if i != len(self.species_names) - 1:
                         rt_pstring += ':'
                 rt_pstring += ')'

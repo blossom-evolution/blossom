@@ -8,7 +8,6 @@ import json
 
 from world import World
 from organism import Organism
-import population_funcs
 
 
 def load_world(fn):

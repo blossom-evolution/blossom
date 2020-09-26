@@ -1,7 +1,3 @@
-import copy
-from organism import Organism
-
-
 def hash_by_id(organism_list):
     """
     Simple hashing by organism id over a list of organisms.

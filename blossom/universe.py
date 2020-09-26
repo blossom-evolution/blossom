@@ -205,10 +205,12 @@ class Universe(object):
                          + self.file_extension)
         dio.save_organisms(self.population_dict, org_output_fn)
 
+        # Potential changes to the world would go here
+        self.world.step()
+
         world_output_fn = (self.dataset_dir + 'world_ds'
                            + str(self.current_time).zfill(self.pad_zeros)
                            + self.file_extension)
-        # Potential changes to the world would go here
         dio.save_world(self.world, world_output_fn)
 
     def current_info(self, verbosity=1, expanded=True):

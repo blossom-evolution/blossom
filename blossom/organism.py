@@ -2,6 +2,7 @@ import uuid
 import copy
 import imp
 import sys
+import random
 
 import default_fields
 from utils import cast_to_list
@@ -30,7 +31,8 @@ class Organism(object):
 
         # Set unique id for organism
         if self.organism_id is None:
-            self.organism_id = str(uuid.uuid4())
+            # self.organism_id = str(uuid.uuid4())
+            self.organism_id = self.get_new_id()
 
         # Set current water level for uninitialized organism
         if self.drinking_type is not None and self.water_current is None:
@@ -56,6 +58,12 @@ class Organism(object):
                        for key, val in organism_vars.items()
                        if not key.startswith('_')}
         return public_vars
+
+    def get_new_id(self):
+        """
+        Generates pseudo-random ID for the organism, seeded by the universe.
+        """
+        return str(uuid.UUID(int=random.getrandbits(128)))
 
     @classmethod
     def clone(cls, organism):
@@ -83,6 +91,33 @@ class Organism(object):
         Clone this organism.
         """
         return self.clone(self)
+
+    def get_child(self, other_parent=None):
+        """
+        Creates an Organism object with similar properties to self, and can
+        add another parent if it exists. Note that this doesn't assume
+        anything about how much food / water the child is left with, so these
+        should be set with custom / default reproduction methods.
+
+        Parameters
+        ----------
+        other_parent : Organism
+            Parent that reproduces with self to produce the child.
+
+        Returns
+        -------
+        child : Organism
+            Generated child.
+        """
+        child = self.clone_self()
+        child.age = 0
+        child.organism_id = child.get_new_id()
+        if other_parent is None:
+            child.ancestry.append(self.organism_id)
+        else:
+            child.ancestry.append([self.organism_id, other_parent.organism_id])
+        child.last_action = None
+        return child
 
     def update_parameter(self, parameter, value, method='set', in_place=False, original=None):
         """

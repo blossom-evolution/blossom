@@ -10,59 +10,28 @@ from world import World
 from organism import Organism
 
 
-def load_world(fn):
+def load_universe(fn):
     """
     Load dataset file from JSON.
-    filenames can be a single string or a list of strings.
 
     Parameters
     ----------
     fn : str
-        Input filename of saved world dataset.
-
-    Returns
-    -------
-    world : World
-        World object reconstructed from the saved dataset.
-    """
-    with open(fn, 'r') as f:
-        world_dict = json.load(f)
-    return World(world_dict)
-
-
-def save_world(world, fn):
-    """
-    Write world information from World object to file in JSON format.
-
-    Parameters
-    ----------
-    world : World
-        World attributes to write to file.
-    fn : str
-        Output filename of saved world dataset.
-    """
-    with open(fn, 'w') as f:
-        json.dump(world.to_dict(), f, indent=2)
-
-
-def load_organisms(fn):
-    """
-    Load dataset file from JSON.
-    filenames can be a single string or a list of strings.
-
-    Parameters
-    ----------
-    fn : str
-        Input filename of saved organism dataset.
+        Input filename of saved universe dataset.
 
     Returns
     -------
     population_dict : dict
         A dict of Organism objects reconstructed from the saved dataset.
+    world : World
+        World object reconstructed from the saved dataset.
     """
     with open(fn, 'r') as f:
-        population_dict_json = json.load(f)
+        universe_dict = json.load(f)
 
+    world = World(universe_dict['world'])
+
+    population_dict_json = universe_dict['population']
     population_dict = {}
     for species in population_dict_json:
         population_dict[species] = {}
@@ -71,20 +40,22 @@ def load_organisms(fn):
             Organism(organism_dict)
             for organism_dict in population_dict_json[species]['organisms']
         ]
-    return population_dict
+
+    return population_dict, world
 
 
-def save_organisms(population_dict, fn):
+def save_universe(population_dict, world, fn):
     """
-    Write organism data from dict of Organism objects to file in JSON
-    format.
+    Save population_dict and world to file in JSON format.
 
     Parameters
     ----------
     population_dict : dict
         Dict of Organisms to write to file.
+    world : World
+        World attributes to write to file.
     fn : str
-        Output filename of saved organism dataset.
+        Output filename of saved universe dataset.
     """
     population_dict_json = {}
     for species in population_dict:
@@ -95,5 +66,10 @@ def save_organisms(population_dict, fn):
             for organism in population_dict[species]['organisms']
         ]
 
+    universe_dict = {
+        'population': population_dict_json,
+        'world': world.to_dict()
+    }
+
     with open(fn, 'w') as f:
-        json.dump(population_dict_json, f, indent=2)
+        json.dump(universe_dict, f, indent=2)

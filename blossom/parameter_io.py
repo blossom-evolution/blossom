@@ -356,9 +356,9 @@ def load_species_from_dict(init_dicts,
         # Populate population dict with relevant bulk stats and organism lists
         population_dict[species_init_dict['species_name']] = {
             'statistics': {
-                'count': population_size,
-                'alive_count': population_size,
-                'dead_count': 0
+                'total': population_size,
+                'alive': population_size,
+                'dead': 0
             },
             'organisms': species_organism_list
         }
@@ -474,9 +474,9 @@ def load_species_from_param_files(fns,
         # Populate population dict with relevant bulk stats and organism lists
         population_dict[species_init_dict['species_name']] = {
             'statistics': {
-                'count': species_init_dict['population_size'],
-                'alive_count': species_init_dict['population_size'],
-                'dead_count': 0
+                'total': species_init_dict['population_size'],
+                'alive': species_init_dict['population_size'],
+                'dead': 0
             },
             'organisms': species_organism_list
         }

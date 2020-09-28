@@ -1,9 +1,9 @@
-import sys
 import os
-import errno
-from collections import Counter
+from pathlib import Path
 
 import time
+import random
+import numpy as np
 
 import parse_intent
 import utils
@@ -18,8 +18,7 @@ class Universe(object):
     """
 
     def __init__(self,
-                 world_ds_fn=None,
-                 organisms_ds_fn=None,
+                 dataset_fn=None,
                  world_param_fn=None,
                  species_param_fns=None,
                  world_param_dict={},
@@ -29,16 +28,15 @@ class Universe(object):
                  end_time=10,
                  dataset_dir='datasets/',
                  pad_zeros=0,
-                 file_extension='.txt'):
+                 file_extension='.txt',
+                 seed=None):
         """
         Initialize universe based on either parameter files or saved datasets.
 
         Parameters
         ----------
-        world_ds_fn : str
-            Filename of saved world dataset.
-        organisms_ds_fn : str
-            Filename of saved organism dataset.
+        dataset_fn : str
+            Filename of saved organism + world dataset.
         world_param_fn : str
             Filename of world parameter file.
         species_param_fns : list of str
@@ -61,13 +59,18 @@ class Universe(object):
         file_extension : str
             File extension for saving dataset files. Should generally be '.txt'
             or '.json'.
-
+        seed : int, optional
+            Random seed for the simulation.
         """
+        # Set random seeds for the entire simulation
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+
         self.start_timestamp = time.time()
         self.last_timestamp = self.start_timestamp
 
-        self.world_ds_fn = world_ds_fn
-        self.organisms_ds_fn = organisms_ds_fn
+        self.dataset_fn = dataset_fn
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
         self.custom_module_fns = custom_module_fns
@@ -80,14 +83,8 @@ class Universe(object):
                                       for path in self.custom_module_fns
                                       if os.path.isfile(path)]
 
-        self.dataset_dir = dataset_dir
-        if dataset_dir[-1] != '/':
-            self.dataset_dir += '/'
-        try:
-            os.makedirs(dataset_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        self.dataset_dir = Path(dataset_dir)
+        self.dataset_dir.mkdir(exist_ok=True)
 
         self.current_time = current_time
         self.end_time = end_time
@@ -96,72 +93,52 @@ class Universe(object):
         #     self.pad_zeros += 1
         self.file_extension = file_extension
 
-        # world is a World object
-        self.world = self.initialize_world()
-        # population_dict is a list of Organism objects
-        self.population_dict = self.initialize_organisms()
-
+        self.population_dict, self.world = self.initialize()
         self.species_names = sorted(list(self.population_dict.keys()))
-
         self.intent_list = []
 
-    def initialize_world(self):
+    def initialize(self):
         """
-        Initialize the world of the universe from either a saved dataset
-        or from a parameter file (and subsequently writing the
-        initial time step to file).
-
-        Returns
-        -------
-        world : World
-            World at the beginning of the simulation.
-        """
-        if self.world_ds_fn is not None:
-            # Set up entire world based on world records
-            world = dio.load_world(self.world_ds_fn)
-        else:
-            if self.world_param_fn is not None:
-                # Set up entire world based on parameter file
-                world = pio.load_world(fn=self.world_param_fn)
-            else:
-                world = pio.load_world(init_dict=self.world_param_dict)
-            output_fn = (self.dataset_dir + 'world_ds'
-                         + str(self.current_time).zfill(self.pad_zeros)
-                         + self.file_extension)
-            dio.save_world(world, output_fn)
-        return world
-
-    def initialize_organisms(self):
-        """
-        Initialize all organisms in the universe from either a saved dataset
-        or from parameter files (and subsequently writing the
+        Initialize world and organisms in the universe, from either saved
+        datasets or from parameter files (and subsequently writing the
         initial time step to file).
 
         Returns
         -------
         population_dict : dict
             Dict of organisms at the beginning of the simulation.
+        world : World
+            World at the beginning of the simulation.
         """
-        if self.organisms_ds_fn is not None:
-            # Set up all organisms based on organism records
-            population_dict = dio.load_organisms(self.organisms_ds_fn)
+        if self.dataset_fn is not None:
+            # Set up entire universe based on saved dataset
+            population_dict, world = dio.load_universe(self.dataset_fn)
+
+        if self.world_param_fn is not None:
+            # Set up entire world based on parameter file
+            world = pio.load_world(fn=self.world_param_fn)
         else:
-            if self.species_param_fns is not None:
-                # Set up all organisms based on species specifications
-                population_dict = pio.load_species(
-                                      fns=self.species_param_fns,
-                                      init_world=self.world,
-                                      custom_module_fns=self.custom_module_fns)
-            else:
-                population_dict = pio.load_species(
-                                      init_dicts=self.species_param_dicts,
-                                      init_world=self.world,
-                                      custom_module_fns=self.custom_module_fns)
-            output_fn = (self.dataset_dir + 'organisms_ds'
-                         + str(self.current_time).zfill(self.pad_zeros)
-                         + self.file_extension)
-            dio.save_organisms(population_dict, output_fn)
-        return population_dict
+            world = pio.load_world(init_dict=self.world_param_dict)
+
+        if self.species_param_fns is not None:
+            # Set up all organisms based on species specifications
+            population_dict = pio.load_species(
+                                  fns=self.species_param_fns,
+                                  init_world=world,
+                                  custom_module_fns=self.custom_module_fns)
+        else:
+            population_dict = pio.load_species(
+                                  init_dicts=self.species_param_dicts,
+                                  init_world=world,
+                                  custom_module_fns=self.custom_module_fns)
+
+        output_fn = (
+            self.dataset_dir / 'ds{}'.format(str(self.current_time)
+                                             .zfill(self.pad_zeros))
+        ).with_suffix(self.file_extension)
+        dio.save_universe(population_dict, world, output_fn)
+
+        return population_dict, world
 
     def step(self):
         """
@@ -200,21 +177,17 @@ class Universe(object):
         self.population_dict = parse_intent.parse(self.intent_list,
                                                   self.population_dict)
 
-        org_output_fn = (self.dataset_dir + 'organisms_ds'
-                         + str(self.current_time).zfill(self.pad_zeros)
-                         + self.file_extension)
-        dio.save_organisms(self.population_dict, org_output_fn)
-
         # Potential changes to the world would go here
         self.world.step()
 
-        world_output_fn = (self.dataset_dir + 'world_ds'
-                           + str(self.current_time).zfill(self.pad_zeros)
-                           + self.file_extension)
-        dio.save_world(self.world, world_output_fn)
+        output_fn = (
+            self.dataset_dir / 'ds{}'.format(str(self.current_time)
+                                             .zfill(self.pad_zeros))
+        ).with_suffix(self.file_extension)
+        dio.save_universe(self.population_dict, self.world, output_fn)
 
     def current_info(self, verbosity=1, expanded=True):
-        total_num = sum([self.population_dict[species]['statistics']['count']
+        total_num = sum([self.population_dict[species]['statistics']['total']
                          for species in self.species_names])
 
         pstring = 't = %s' % (self.current_time)
@@ -235,12 +208,12 @@ class Universe(object):
                 for species_name in self.species_names:
                     pstring += (
                         '    %s: %d organisms\n'
-                        % (species_name, self.population_dict[species_name]['statistics']['count'])
+                        % (species_name, self.population_dict[species_name]['statistics']['total'])
                     )
             else:
                 rt_pstring = rt_pstring + ' ('
                 for i, species_name in enumerate(self.species_names):
-                    rt_pstring += str(self.population_dict[species_name]['statistics']['count'])
+                    rt_pstring += str(self.population_dict[species_name]['statistics']['total'])
                     if i != len(self.species_names) - 1:
                         rt_pstring += ':'
                 rt_pstring += ')'

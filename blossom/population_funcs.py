@@ -65,9 +65,9 @@ def get_population_dict(organism_list, species_names):
     population_dict = {
         species: {
             'statistics': {
-                'count': 0,
-                'alive_count': 0,
-                'dead_count': 0
+                'total': 0,
+                'alive': 0,
+                'dead': 0
             },
             'organisms': []
         }
@@ -75,9 +75,9 @@ def get_population_dict(organism_list, species_names):
     }
     for organism in organism_list:
         population_dict[organism.species_name]['organisms'].append(organism)
-        population_dict[organism.species_name]['statistics']['count'] += 1
+        population_dict[organism.species_name]['statistics']['total'] += 1
         if organism.alive:
-            population_dict[organism.species_name]['statistics']['alive_count'] += 1
+            population_dict[organism.species_name]['statistics']['alive'] += 1
         else:
-            population_dict[organism.species_name]['statistics']['dead_count'] += 1
+            population_dict[organism.species_name]['statistics']['dead'] += 1
     return population_dict

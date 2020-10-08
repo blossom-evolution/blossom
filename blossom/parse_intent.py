@@ -39,18 +39,21 @@ def parse(intent_list, population_dict):
 
     new_organism_ids = set()
 
-    # Randomly sample organism steps to select
+    # Randomly sample organism steps to select. Only use sets for conditionals,
+    # add to saved structures using lists and dicts (since key order is
+    # preserved)
     for organism_set in random.sample(intent_list, len(intent_list)):
         set_ids = set(org.organism_id for org in organism_set)
         if len(new_organism_ids & set_ids) == 0:
             updated_list.extend(organism_set)
-            new_organism_ids.update(set(org.organism_id for org in organism_set))
+            new_organism_ids.update(set_ids)
 
     # Add back organisms whose steps were not chosen (and increment status)
-    for id in (set(id_org_dict.keys()) - new_organism_ids):
-        org = id_org_dict[id]
-        if org.alive:
-            updated_list.append(org.step_without_acting())
+    for id in id_org_dict.keys():
+        if id not in new_organism_ids:
+            org = id_org_dict[id]
+            if org.alive:
+                updated_list.append(org.step_without_acting())
 
     return population_funcs.get_population_dict(updated_list,
                                                 population_dict.keys())

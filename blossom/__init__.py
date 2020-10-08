@@ -2,7 +2,7 @@
 blossom is a package for simulating evolution
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import sys
 import os

@@ -30,3 +30,6 @@ class World(object):
                        for key, val in world_vars.items()
                        if not key.startswith('_')}
         return public_vars
+
+    def step(self):
+        self.current_time += 1

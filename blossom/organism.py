@@ -2,6 +2,7 @@ import uuid
 import copy
 import imp
 import sys
+import random
 
 import default_fields
 from utils import cast_to_list
@@ -30,7 +31,8 @@ class Organism(object):
 
         # Set unique id for organism
         if self.organism_id is None:
-            self.organism_id = str(uuid.uuid4())
+            # self.organism_id = str(uuid.uuid4())
+            self.organism_id = self.get_new_id()
 
         # Set current water level for uninitialized organism
         if self.drinking_type is not None and self.water_current is None:
@@ -56,6 +58,12 @@ class Organism(object):
                        for key, val in organism_vars.items()
                        if not key.startswith('_')}
         return public_vars
+
+    def get_new_id(self):
+        """
+        Generates pseudo-random ID for the organism, seeded by the universe.
+        """
+        return str(uuid.UUID(int=random.getrandbits(128)))
 
     @classmethod
     def clone(cls, organism):
@@ -83,6 +91,33 @@ class Organism(object):
         Clone this organism.
         """
         return self.clone(self)
+
+    def get_child(self, other_parent=None):
+        """
+        Creates an Organism object with similar properties to self, and can
+        add another parent if it exists. Note that this doesn't assume
+        anything about how much food / water the child is left with, so these
+        should be set with custom / default reproduction methods.
+
+        Parameters
+        ----------
+        other_parent : Organism
+            Parent that reproduces with self to produce the child.
+
+        Returns
+        -------
+        child : Organism
+            Generated child.
+        """
+        child = self.clone_self()
+        child.age = 0
+        child.organism_id = child.get_new_id()
+        if other_parent is None:
+            child.ancestry.append(self.organism_id)
+        else:
+            child.ancestry.append([self.organism_id, other_parent.organism_id])
+        child.last_action = None
+        return child
 
     def update_parameter(self, parameter, value, method='set', in_place=False, original=None):
         """
@@ -126,17 +161,19 @@ class Organism(object):
         setattr(updated_organism, parameter, attribute)
         return updated_organism
 
-    def move(self, organism_list, world, position_hash_table=None):
+    def move(self, population_dict, world, position_hash_table=None):
         """
         Method for handling movement. Searches through custom methods and
         built-in movement methods.
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table : dict
+            Dictionary mapping positions to available organisms.
 
         Returns
         -------
@@ -151,13 +188,13 @@ class Organism(object):
                     if hasattr(custom_module, self.movement_type):
                         return getattr(custom_module, self.movement_type)(
                             self,
-                            organism_list,
+                            population_dict,
                             world,
                             position_hash_table=position_hash_table
                         )
             return getattr(movement, self.movement_type)(
                 self,
-                organism_list,
+                population_dict,
                 world,
                 position_hash_table=position_hash_table
             )
@@ -169,17 +206,19 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def reproduce(self, organism_list, world, position_hash_table=None):
+    def reproduce(self, population_dict, world, position_hash_table=None):
         """
         Method for handling reproduction. Searches through custom methods
         and built-in reproduction methods.
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table : dict
+            Dictionary mapping positions to available organisms.
 
         Returns
         -------
@@ -197,13 +236,13 @@ class Organism(object):
                     if hasattr(custom_module, self.reproduction_type):
                         return getattr(custom_module, self.reproduction_type)(
                             self,
-                            organism_list,
+                            population_dict,
                             world,
                             position_hash_table=position_hash_table
                         )
             return getattr(reproduction, self.reproduction_type)(
                 self,
-                organism_list,
+                population_dict,
                 world,
                 position_hash_table=position_hash_table
             )
@@ -215,17 +254,19 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def drink(self, organism_list, world, position_hash_table=None):
+    def drink(self, population_dict, world, position_hash_table=None):
         """
         Method for handling drinking. Searches through custom methods and
         built-in drinking methods.
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table : dict
+            Dictionary mapping positions to available organisms.
 
         Returns
         -------
@@ -241,13 +282,13 @@ class Organism(object):
                     if hasattr(custom_module, self.drinking_type):
                         return getattr(custom_module, self.drinking_type)(
                             self,
-                            organism_list,
+                            population_dict,
                             world,
                             position_hash_table=position_hash_table
                         )
             return getattr(drinking, self.drinking_type)(
                 self,
-                organism_list,
+                population_dict,
                 world,
                 position_hash_table=position_hash_table
             )
@@ -259,17 +300,19 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def eat(self, organism_list, world, position_hash_table=None):
+    def eat(self, population_dict, world, position_hash_table=None):
         """
         Method for handling eating. Searches through custom methods and
         built-in eating methods.
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table : dict
+            Dictionary mapping positions to available organisms.
 
         Returns
         -------
@@ -285,13 +328,13 @@ class Organism(object):
                     if hasattr(custom_module, self.eating_type):
                         return getattr(custom_module, self.eating_type)(
                             self,
-                            organism_list,
+                            population_dict,
                             world,
                             position_hash_table=position_hash_table
                         )
             return getattr(eating, self.eating_type)(
                 self,
-                organism_list,
+                population_dict,
                 world,
                 position_hash_table=position_hash_table
             )
@@ -303,7 +346,7 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def act(self, organism_list, world, position_hash_table=None):
+    def act(self, population_dict, world, position_hash_table=None):
         """
         Method that decides and calls an action for the current timestep.
         Searches through custom methods and built-in movement methods.
@@ -314,14 +357,16 @@ class Organism(object):
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
+        position_hash_table : dict
+            Dictionary mapping positions to available organisms.
 
         Returns
         -------
-        affected_organisms : list of Organisms
+        affected_organisms : Organisms, or list of Organisms
             Organism or list of organisms affected by this organism's action.
 
         """
@@ -332,14 +377,14 @@ class Organism(object):
                     if hasattr(custom_module, self.action_type):
                         action_name = getattr(custom_module, self.action_type)(
                             self,
-                            organism_list,
+                            population_dict,
                             world,
                             position_hash_table=position_hash_table
                         )
             if action_name is None:
                 action_name = getattr(action, self.action_type)(
                     self,
-                    organism_list,
+                    population_dict,
                     world,
                     position_hash_table=position_hash_table
                 )
@@ -354,7 +399,7 @@ class Organism(object):
         self.last_action = action_name
 
         affected_organisms = cast_to_list(getattr(self, action_name)(
-            organism_list,
+            population_dict,
             world,
             position_hash_table=position_hash_table
         ))
@@ -473,7 +518,7 @@ class Organism(object):
                                                              original=original)
         return updated_organism
 
-    def step(self, organism_list, world, position_hash_table=None, do_action=True):
+    def step(self, population_dict, world, position_hash_table=None, do_action=True):
         """
         Steps through one time step for this organism. Reflects changes
         based on actions / behaviors and updates to health parameters.
@@ -483,8 +528,8 @@ class Organism(object):
 
         Parameters
         ----------
-        organism_list : list of Organisms
-            List of organisms, with which this organism may interact.
+        population_dict : dict of Organisms
+            Dict of organisms, with which this organism may interact.
         world : World
             World, with which this organism may interact.
         position_hash_table: dict
@@ -512,7 +557,7 @@ class Organism(object):
 
         if do_action:
             organism, affected_organisms = organism.act(
-                organism_list,
+                population_dict,
                 world,
                 position_hash_table=position_hash_table
             )
@@ -548,7 +593,7 @@ class Organism(object):
             Note that this returns an Organism object, not a list.
 
         """
-        return self.step(organism_list=None,
+        return self.step(population_dict=None,
                          world=None,
                          position_hash_table=None,
                          do_action=False)[0]

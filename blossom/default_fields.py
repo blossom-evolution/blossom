@@ -8,6 +8,7 @@ on the default values specified in this module.
 
 world_fields = {'dimensionality': 1,
                 'world_size': [10],
+                'current_time': 0,
                 'water': None,
                 'food': None,
                 'obstacles': None}

@@ -2,7 +2,7 @@
 blossom is a package for simulating evolution
 """
 
-__version__ = "0.1"
+__version__ = "1.2.0"
 
 import sys
 import os
@@ -20,4 +20,4 @@ import parameter_io
 import organism_behavior
 import world_generator
 import utils
-import organism_list_funcs
+import population_funcs

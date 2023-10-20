@@ -9,10 +9,10 @@ import json
 import random
 import copy
 
-from utils import cast_to_list
-from world import World
-from organism import Organism
-import default_fields
+from .utils import cast_to_list
+from .world import World
+from .organism import Organism
+from . import default_fields
 
 
 def load_world(fn=None, init_dict={}):

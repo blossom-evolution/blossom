@@ -3,9 +3,15 @@ import setuptools
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
+with open("requirements.txt", "r") as f:
+    install_requires = f.readlines()
+
+version_dict = {}
+with open("blossom/_version.py") as fp:
+    exec(fp.read(), version_dict)
 setuptools.setup(
     name='blossom',
-    version='1.3.0',
+    version=version_dict["__version__"],
     author='Bryan Brzycki',
     author_email='bbrzycki@berkeley.edu',
     description='A simple evolution simulator',
@@ -17,11 +23,7 @@ setuptools.setup(
         'Source': 'https://github.com/blossom-evolution/blossom'
     },
     packages=setuptools.find_packages(),
-    install_requires=[
-       'uuid',
-       'numpy',
-       'configparser'
-    ],
+    install_requires=install_requires,
     classifiers=(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',

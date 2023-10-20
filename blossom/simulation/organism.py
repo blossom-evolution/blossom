@@ -4,9 +4,9 @@ import imp
 import sys
 import random
 
-import default_fields
-from utils import cast_to_list
-from organism_behavior import movement, reproduction, drinking, eating, action
+from . import default_fields
+from .utils import cast_to_list
+from .organism_behavior import movement, reproduction, drinking, eating, action
 
 
 class Organism(object):

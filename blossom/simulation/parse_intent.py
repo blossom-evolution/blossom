@@ -1,5 +1,5 @@
 import random
-import population_funcs
+from . import population_funcs
 
 
 def parse(intent_list, population_dict):

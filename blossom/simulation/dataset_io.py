@@ -6,8 +6,8 @@ write world and organism data back to file.
 import copy
 import json
 
-from world import World
-from organism import Organism
+from .world import World
+from .organism import Organism
 
 
 def load_universe(fn):

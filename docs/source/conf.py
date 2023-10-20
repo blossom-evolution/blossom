@@ -12,21 +12,26 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
+from pathlib import Path
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+blossom_path = Path(__file__).parents[2].resolve()
+sys.path.insert(0, str(blossom_path))
+
+version_dict = {}
+with open(blossom_path / "blossom/_version.py") as fp:
+    exec(fp.read(), version_dict)
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'blossom'
-copyright = '2018, Bryan Brzycki'
+copyright = '2018-2023, Bryan Brzycki'
 author = 'Bryan Brzycki'
 
 # The short X.Y version
-version = ''
+# version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = version_dict["__version__"]
 
 
 # -- General configuration ---------------------------------------------------

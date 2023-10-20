@@ -5,11 +5,11 @@ import time
 import random
 import numpy as np
 
-import parse_intent
-import utils
-import dataset_io as dio
-import parameter_io as pio
-import population_funcs
+from . import parse_intent
+from . import utils
+from . import dataset_io as dio
+from . import parameter_io as pio
+from . import population_funcs
 
 
 class Universe(object):

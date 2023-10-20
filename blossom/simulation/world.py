@@ -1,4 +1,4 @@
-import default_fields
+from . import default_fields
 
 
 class World(object):

@@ -6,6 +6,12 @@ with open('README.md', 'r') as fh:
 with open("requirements.txt", "r") as f:
     install_requires = f.readlines()
 
+entry_points = {
+    'console_scripts': [
+        'blossom = blossom.blossom_exe:cli'
+    ]
+}
+
 version_dict = {}
 with open("blossom/_version.py") as fp:
     exec(fp.read(), version_dict)
@@ -22,6 +28,7 @@ setuptools.setup(
         'Documentation': 'https://blossom.readthedocs.io/en/latest/',
         'Source': 'https://github.com/blossom-evolution/blossom'
     },
+    entry_points=entry_points,
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=(

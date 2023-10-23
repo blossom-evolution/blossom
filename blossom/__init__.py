@@ -17,3 +17,5 @@ from blossom.simulation import organism_behavior
 from blossom.simulation import world_generator
 from blossom.simulation import utils
 from blossom.simulation import population_funcs
+
+from blossom.visualization import TimeSeries, Snapshot

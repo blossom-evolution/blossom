@@ -5,6 +5,7 @@ write world and organism data back to file.
 
 import copy
 import json
+from pathlib import Path
 
 from .world import World
 from .organism import Organism
@@ -35,7 +36,7 @@ def load_universe(fn):
     population_dict = {}
     for species in population_dict_json:
         population_dict[species] = {}
-        population_dict[species]['statistics'] = copy.deepcopy(population_dict_json[species]['statistics'])
+        population_dict[species]['statistics'] = population_dict_json[species]['statistics']
         population_dict[species]['organisms'] = [
             Organism(organism_dict)
             for organism_dict in population_dict_json[species]['organisms']
@@ -60,12 +61,11 @@ def save_universe(population_dict, world, fn):
     population_dict_json = {}
     for species in population_dict:
         population_dict_json[species] = {}
-        population_dict_json[species]['statistics'] = copy.deepcopy(population_dict[species]['statistics'])
+        population_dict_json[species]['statistics'] = population_dict[species]['statistics']
         population_dict_json[species]['organisms'] = [
             organism.to_dict()
             for organism in population_dict[species]['organisms']
         ]
-
     universe_dict = {
         'population': population_dict_json,
         'world': world.to_dict()
@@ -73,3 +73,15 @@ def save_universe(population_dict, world, fn):
 
     with open(fn, 'w') as f:
         json.dump(universe_dict, f, indent=2)
+
+    log_dict = {
+        'species': {
+            species: population_dict[species]['statistics'] 
+            for species in population_dict
+        },
+        'world': {
+            'time': world.current_time
+        }
+    }
+    with open(Path(fn).parent / f'log_{Path(fn).name}', 'w') as f:
+        json.dump(log_dict, f, indent=2)

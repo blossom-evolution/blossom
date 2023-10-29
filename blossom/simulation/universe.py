@@ -113,24 +113,24 @@ class Universe(object):
         if self.dataset_fn is not None:
             # Set up entire universe based on saved dataset
             population_dict, world = dio.load_universe(self.dataset_fn)
-
-        if self.world_param_fn is not None:
-            # Set up entire world based on parameter file
-            world = pio.load_world(fn=self.world_param_fn)
         else:
-            world = pio.load_world(init_dict=self.world_param_dict)
+            if self.world_param_fn is not None:
+                # Set up entire world based on parameter file
+                world = pio.load_world(fn=self.world_param_fn)
+            else:
+                world = pio.load_world(init_dict=self.world_param_dict)
 
-        if self.species_param_fns is not None:
-            # Set up all organisms based on species specifications
-            population_dict = pio.load_species(
-                                  fns=self.species_param_fns,
-                                  init_world=world,
-                                  custom_module_fns=self.custom_module_fns)
-        else:
-            population_dict = pio.load_species(
-                                  init_dicts=self.species_param_dicts,
-                                  init_world=world,
-                                  custom_module_fns=self.custom_module_fns)
+            if self.species_param_fns is not None:
+                # Set up all organisms based on species specifications
+                population_dict = pio.load_species(
+                                    fns=self.species_param_fns,
+                                    init_world=world,
+                                    custom_module_fns=self.custom_module_fns)
+            else:
+                population_dict = pio.load_species(
+                                    init_dicts=self.species_param_dicts,
+                                    init_world=world,
+                                    custom_module_fns=self.custom_module_fns)
 
         output_fn = (
             self.dataset_dir / 'ds{}'.format(str(self.current_time)

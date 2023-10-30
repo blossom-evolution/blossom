@@ -69,6 +69,7 @@ class Universe(object):
 
         self.start_timestamp = time.time()
         self.last_timestamp = self.start_timestamp
+        self.elapsed_time = 0
 
         self.dataset_fn = dataset_fn
         self.world_param_fn = world_param_fn
@@ -185,6 +186,13 @@ class Universe(object):
                                              .zfill(self.pad_zeros))
         ).with_suffix(self.file_extension)
         dio.save_universe(self.population_dict, self.world, output_fn)
+        log_fn = self.dataset_dir / 'log_ds{}'.format(str(self.current_time)
+                                                      .zfill(self.pad_zeros))
+        now = time.time()
+        self.elapsed_time = now-self.last_timestamp
+        self.last_timestamp = now
+        dio.save_universe_logs(self.population_dict, self.world, log_fn, 
+                               elapsed_time=self.elapsed_time)
 
     def current_info(self, verbosity=1, expanded=True):
         total_num = sum([self.population_dict[species]['statistics']['total']
@@ -219,21 +227,18 @@ class Universe(object):
                 rt_pstring += ')'
 
         if verbosity >= 2:
-            now = time.time()
-            last_time_diff = now - self.last_timestamp
-            self.last_timestamp = now
             if expanded:
                 pstring += (
                     '    Time elapsed since last time step: %s\n'
-                    % utils.time_to_string(last_time_diff)
+                    % utils.time_to_string(self.elapsed_time)
                 )
             else:
                 pstring = rt_pstring + (
                     ' (%s)'
-                    % (utils.time_to_string(last_time_diff))
+                    % (utils.time_to_string(self.elapsed_time))
                 )
         if verbosity >= 3:
-            start_time_diff = now - self.start_timestamp
+            start_time_diff = time.time() - self.start_timestamp
             if expanded:
                 pstring += (
                     '    Time elapsed since start: %s\n'
@@ -242,7 +247,7 @@ class Universe(object):
             else:
                 pstring = rt_pstring + (
                     ' (%s; %s)'
-                    % (utils.time_to_string(last_time_diff),
+                    % (utils.time_to_string(self.elapsed_time),
                        utils.time_to_string(start_time_diff))
                 )
 

@@ -74,14 +74,17 @@ def save_universe(population_dict, world, fn):
     with open(fn, 'w') as f:
         json.dump(universe_dict, f, indent=2)
 
+
+def save_universe_logs(population_dict, world, fn, elapsed_time):
     log_dict = {
         'species': {
             species: population_dict[species]['statistics'] 
             for species in population_dict
         },
         'world': {
-            'time': world.current_time
+            'timestep': world.current_time,
+            'elapsed_time': elapsed_time
         }
     }
-    with open(Path(fn).parent / f'log_{Path(fn).name}', 'w') as f:
+    with open(fn, 'w') as f:
         json.dump(log_dict, f, indent=2)

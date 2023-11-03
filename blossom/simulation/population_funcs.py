@@ -12,17 +12,17 @@ def hash_by_id(organism_list):
     return hash_table
 
 
-def hash_by_position(organism_list):
+def hash_by_location(organism_list):
     """
-    Simple hashing by organism position over a list of organisms.
+    Simple hashing by organism location over a list of organisms.
     """
     hash_table = {}
     for organism in organism_list:
-        position = tuple(organism.position)
-        if position in hash_table:
-            hash_table[position].append(organism)
+        location = tuple(organism.location)
+        if location in hash_table:
+            hash_table[location].append(organism)
         else:
-            hash_table[position] = [organism]
+            hash_table[location] = [organism]
     return hash_table
 
 

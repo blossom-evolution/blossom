@@ -5,8 +5,9 @@ organism objects at the initial timestep.
 
 import glob
 import configparser
+import yaml
 import json
-import random
+import numpy as np
 import copy
 
 from .utils import cast_to_list
@@ -56,16 +57,7 @@ def load_world_from_dict(init_dict):
     field_lengths = []
     fields = []
     for field in ['water', 'food', 'obstacles']:
-        if world_init_dict[field]:
-            assert type(world_init_dict[field]) is list
-            # Check each element of these fields is either int or float (can
-            # include math.inf, which is a float)
-            for i in world_init_dict[field]:
-                if type(i) is list:
-                    for j in i:
-                        assert type(j) in [int, float]
-                else:
-                    assert type(i) in [int, float]
+        if world_init_dict[field] is not None:
             field_lengths.append(len(world_init_dict[field]))
             fields.append(field)
     if len(field_lengths) >= 2:
@@ -202,11 +194,14 @@ def load_species(fns=None,
 
 def create_organisms(species_init_dict,
                      init_world=World({}),
-                     position_callback=None):
+                     location_callback=None,
+                     seed=None):
     '''
     Make organism list from an species_init_dict either provided directly or
     scraped from parameter file. All organisms are from a single species.
     '''
+    rng = np.random.default_rng(seed)
+
     organism_list = []
     list_field_keys = []
     for key in species_init_dict.keys():
@@ -221,32 +216,33 @@ def create_organisms(species_init_dict,
             key: val for key, val in species_init_dict.items()
             if not key == 'population_size'
         }
+
         for key in list_field_keys:
             organism_init_dict[key] = organism_init_dict[key][i]
-        if 'initial_positions' in species_init_dict:
-            position = organism_init_dict['initial_positions']
-        elif position_callback:
-            position = position_callback(init_world.world_size)
-        elif 'position_callback' in species_init_dict:
-            position = (species_init_dict['position_callback']
+        if 'initial_locations' in species_init_dict:
+            location = organism_init_dict['initial_locations']
+        elif location_callback:
+            location = location_callback(init_world.world_size)
+        elif 'location_callback' in species_init_dict:
+            location = (species_init_dict['location_callback']
                         (init_world.world_size))
         else:
             # Vary organism location randomly
-            position = []
+            location = []
             for i in range(init_world.dimensionality):
-                position.append(random.randrange(0,
-                                                 init_world.world_size[i]))
-        organism_init_dict['position'] = position
+                location.append(rng.integers(0, init_world.world_size[i]))
+        organism_init_dict['location'] = location
 
         # Add organism to organism list
-        organism_list.append(Organism(organism_init_dict))
+        organism_list.append(Organism(organism_init_dict, seed=seed))
 
     return organism_list
 
 
 def load_species_from_dict(init_dicts,
                            init_world,
-                           custom_module_fns=None):
+                           custom_module_fns=None,
+                           seed=None):
     """
     Create a list of organisms loaded from Python dicts.
 
@@ -261,6 +257,8 @@ def load_species_from_dict(init_dicts,
         List of external Python scripts containing custom organism
         behaviors. :mod:`blossom` will search for methods within each
         filename included here.
+    seed : int, Generator, optional
+        Random seed for the simulation
 
     Returns
     -------
@@ -272,7 +270,6 @@ def load_species_from_dict(init_dicts,
 
     population_dict = {}
     for init_dict in init_dicts:
-
         species_init_dict = {}
 
         # Set up defaults based on species parameters
@@ -344,14 +341,14 @@ def load_species_from_dict(init_dicts,
             # Track custom method file paths
             species_init_dict['custom_module_fns'] = custom_module_fns
 
-        if 'initial_positions' in init_dict:
-            assert len(init_dict['initial_positions']) == population_size
-            for position in init_dict['initial_positions']:
-                assert len(position) == init_world.dimensionality
-            species_init_dict['initial_positions'] \
-                = init_dict['initial_positions']
+        if 'initial_locations' in init_dict:
+            assert len(init_dict['initial_locations']) == population_size
+            for location in init_dict['initial_locations']:
+                assert len(location) == init_world.dimensionality
+            species_init_dict['initial_locations'] \
+                = init_dict['initial_locations']
 
-        species_organism_list = create_organisms(species_init_dict, init_world)
+        species_organism_list = create_organisms(species_init_dict, init_world, seed=seed)
 
         # Populate population dict with relevant bulk stats and organism lists
         population_dict[species_init_dict['species_name']] = {
@@ -368,7 +365,8 @@ def load_species_from_dict(init_dicts,
 
 def load_species_from_param_files(fns,
                                   init_world,
-                                  custom_module_fns=None):
+                                  custom_module_fns=None,
+                                  seed=None):
     """
     Load all available species parameter files.
 
@@ -384,6 +382,8 @@ def load_species_from_param_files(fns,
         List of external Python scripts containing custom organism
         behaviors. :mod:`blossom` will search for methods within each
         filename included here.
+    seed : int, Generator, optional
+        Random seed for the simulation
 
     Returns
     -------
@@ -391,7 +391,6 @@ def load_species_from_param_files(fns,
         A dict of Organism objects constructed from the parameter file.
 
     """
-
     # Find organism filenames, can be a list of patterns
     fns = cast_to_list(fns)
     org_files = [fn for pattern in fns for fn in glob.glob(pattern)]
@@ -405,10 +404,10 @@ def load_species_from_param_files(fns,
 
         # Parameters that must be str or None
         param_str = ['species_name',
+                     'action_type',
                      'movement_type',
                      'reproduction_type',
                      'drinking_type',
-                     'action_type',
                      'eating_type']
 
         # Parameters that must be int
@@ -443,7 +442,7 @@ def load_species_from_param_files(fns,
         config_org.read(org_file)
 
         # Cycle through all parameters in the config file,
-        # converting them to proper types as specifed above
+        # converting them to proper types as specified above
         for section in config_org.sections():
             for (key, val) in config_org.items(section):
 
@@ -469,7 +468,7 @@ def load_species_from_param_files(fns,
         # Track custom method file paths
         species_init_dict['custom_module_fns'] = custom_module_fns
 
-        species_organism_list = create_organisms(species_init_dict, init_world)
+        species_organism_list = create_organisms(species_init_dict, init_world, seed=seed)
 
         # Populate population dict with relevant bulk stats and organism lists
         population_dict[species_init_dict['species_name']] = {
@@ -482,3 +481,111 @@ def load_species_from_param_files(fns,
         }
 
     return population_dict
+
+
+def parse_config_number(x):
+    """
+    If config number is the string 'inf', use ``np.inf``.
+    """
+    if x == 'inf':
+        x = np.inf 
+    return x
+
+
+def load_from_config(fn, seed=None):
+    """
+    Create initial population and world from .yml configuration file.
+    """
+    with open(fn, 'r') as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+    rng = np.random.default_rng(cfg.get('seed', seed))
+    
+    # Load world
+    world_cfg = cfg['world']
+    size = world_cfg['size']
+
+    world_init_dict = {'world_size': size}
+    if 'water' in world_cfg:
+        peak = world_cfg['water']['peak']
+        world_init_dict['water'] = np.full(size, parse_config_number(peak))
+    else:
+        world_init_dict['water'] = np.full(size, np.inf)
+    if 'food' in world_cfg:
+        peak = world_cfg['food']['peak']
+        if peak == 'inf':
+            peak = np.inf
+        world_init_dict['food'] = np.full(size, peak)
+    else:
+        world_init_dict['food'] = np.full(size, np.inf)
+    if 'obstacles' in world_cfg:
+        peak = world_cfg['obstacles']['peak']
+        if peak == 'inf':
+            peak = np.inf
+        world_init_dict['obstacles'] = np.full(size, peak)
+    else:
+        world_init_dict['obstacles'] = np.full(size, 0)
+    world = load_world_from_dict(world_init_dict)
+
+    # Load species
+    species_cfgs = cfg['species']
+    species_init_dicts=[]
+    for species_cfg in species_cfgs:
+        species_init_dict = {
+            'population_size': species_cfg['population'],
+            'species_name': species_cfg['name'],
+            'max_age': parse_config_number(species_cfg['max_age']),
+            'custom_module_fns': species_cfg['linked_modules']
+        }
+        # Action
+        action = species_cfg['action']
+        if isinstance(action, str):
+            species_init_dict['action_type'] = action 
+        elif isinstance(action, dict):
+            species_init_dict['action_type'] = action['type']
+
+        # Movement 
+        movement = species_cfg.get('movement')
+        if isinstance(movement, str):
+            species_init_dict['movement_type'] = movement 
+        elif isinstance(movement, dict):
+            species_init_dict['movement_type'] = movement['type']
+
+        # Reproduction 
+        reproduction = species_cfg.get('reproduction')
+        if isinstance(reproduction, str):
+            species_init_dict['reproduction_type'] = reproduction 
+        elif isinstance(reproduction, dict):
+            species_init_dict['reproduction_type'] = reproduction['type']
+
+        # Drinking 
+        drinking = species_cfg.get('drinking')
+        if drinking is not None:
+            species_init_dict.update({
+                'drinking_type': drinking['type'],
+                'water_capacity': drinking['capacity'],
+                'water_initial': drinking['initial'],
+                'water_metabolism': drinking['metabolism'],
+                'water_intake': drinking['intake'],
+                'max_time_without_water': drinking['days_without']
+            })
+
+        # Eating 
+        eating = species_cfg.get('eating')
+        if eating is not None:
+            species_init_dict.update({
+                'eating_type': eating['type'],
+                'food_capacity': eating['capacity'],
+                'food_initial': eating['initial'],
+                'food_metabolism': eating['metabolism'],
+                'food_intake': eating['intake'],
+                'max_time_without_food': eating['days_without']
+            })
+
+        species_init_dicts.append(species_init_dict)
+
+    population_dict = load_species_from_dict(species_init_dicts,
+                                             world,
+                                             seed=rng)
+
+    return population_dict, world, rng

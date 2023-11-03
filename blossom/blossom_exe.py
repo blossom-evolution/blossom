@@ -3,6 +3,7 @@ import os
 import click
 
 from ._version import __version__ 
+from .simulation import universe
 from .visualization import dashboard
 
 
@@ -17,6 +18,7 @@ def cli(ctx):
     pass 
 
 
+cli.add_command(universe.run_universe)
 cli.add_command(dashboard.dashboard)
 
 

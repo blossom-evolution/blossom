@@ -1,4 +1,3 @@
-import sys
 import json
 
 
@@ -10,7 +9,7 @@ def write_environment(water,
     Write water, food, and obstacles lists to an environment file.
     """
     if len(water) != len(food) or len(water) != len(obstacles):
-        sys.exit('Invalid environment arrays!')
+        raise ValueError('Invalid environment arrays!')
     env_dict = {'water': water,
                 'food': food,
                 'obstacles': obstacles}

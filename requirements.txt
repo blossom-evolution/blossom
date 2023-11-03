@@ -1,7 +1,10 @@
 uuid
 numpy
+pandas
 configparser
 dash
 dash-bootstrap-components
 click
 humanfriendly
+PyYAML
+matplotlib

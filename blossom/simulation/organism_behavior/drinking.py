@@ -1,27 +1,24 @@
-import sys
-
-
-def constant_drink(organism, population_dict, world, position_hash_table=None):
+def constant_drink(organism, universe):
     """
     Intake constant amount of water from world if water is present.
     """
-    size = world.world_size
+    size = universe.world.world_size
 
     if len(size) == 1:
-        available_water = world.water[organism.position[0]]
+        available_water = universe.world.water[organism.location[0]]
     elif len(size) == 2:
-        available_water = (world.water[organism.position[0]]
-                                      [organism.position[1]])
+        available_water = (universe.world.water[organism.location[0]]
+                                               [organism.location[1]])
     else:
-        sys.exit('Invalid world dimensionality: %s' % len(size))
+        raise ValueError(f'Invalid world dimensionality: {len(size)}')
 
     diff = organism.water_capacity - organism.water_current
     intake = min(available_water, diff, organism.water_intake)
 
     organism.water_current += intake
     if len(size) == 1:
-        world.water[organism.position[0]] -= intake
+        universe.world.water[organism.location[0]] -= intake
     else:
-        world.water[organism.position[0]][organism.position[1]] -= intake
+        universe.world.water[organism.location[0]][organism.location[1]] -= intake
 
     return [organism]

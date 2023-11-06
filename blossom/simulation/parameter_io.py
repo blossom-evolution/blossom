@@ -499,7 +499,14 @@ def load_from_config(fn, seed=None):
     with open(fn, 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-    rng = np.random.default_rng(cfg.get('seed', seed))
+    initial_seed = cfg.get('seed', seed)
+    if initial_seed is None:
+        initial_seed = np.random.default_rng().integers(2**32)
+    rng = np.random.default_rng(initial_seed)    
+    config_params = {
+        'initial_seed': initial_seed,
+        'rng': rng
+    }
     
     # Load world
     world_cfg = cfg['world']
@@ -588,4 +595,4 @@ def load_from_config(fn, seed=None):
                                              world,
                                              seed=rng)
 
-    return population_dict, world, rng
+    return population_dict, world, config_params

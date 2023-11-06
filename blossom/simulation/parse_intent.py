@@ -1,8 +1,9 @@
 import random
+import numpy as np
 from . import population_funcs
 
 
-def parse(intent_list, organism_list):
+def parse(intent_list, organism_list, seed=None):
     """
     Determine whether the intent list is valid and fix it in the event of
     conflicts.
@@ -15,6 +16,8 @@ def parse(intent_list, organism_list):
         the current time step.
     organism_list : list of Organisms
         List of current organisms
+    seed : int, Generator, optional
+        Random seed 
 
     Returns
     -------
@@ -28,6 +31,7 @@ def parse(intent_list, organism_list):
     there is only one organism with a given organism id present in the final
     output list at all times.
     """
+    rng = np.random.default_rng(seed)
     # TODO: Figure out exactly how this should be controlled -- on the scale of
     # the universe, the world, or the organisms itself
     updated_list = []
@@ -41,7 +45,8 @@ def parse(intent_list, organism_list):
     # Randomly sample organism steps to select. Only use sets for conditionals,
     # add to saved structures using lists and dicts (since key order is
     # preserved)
-    for organism_set in random.sample(intent_list, len(intent_list)):
+    rng.shuffle(intent_list)
+    for organism_set in intent_list:
         set_ids = set(organism.organism_id for organism in organism_set)
         if len(new_organism_ids & set_ids) == 0:
             updated_list.extend(organism_set)

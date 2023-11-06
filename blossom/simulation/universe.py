@@ -2,6 +2,7 @@ import click
 import os
 import yaml
 from pathlib import Path
+import datetime
 
 import time
 import numpy as np
@@ -28,9 +29,10 @@ class Universe(object):
                  custom_module_fns=None,
                  current_time=0,
                  end_time=1000,
-                 run_dir='datasets/',
+                 project_dir='datasets/',
                  pad_zeros=4,
-                 seed=None):
+                 seed=None,
+                 **kwargs):
         """
         Initialize universe based on either parameter files or saved datasets.
 
@@ -55,15 +57,18 @@ class Universe(object):
             Current time of simulation
         end_time : int
             End time of simulation
-        run_dir : str
-            Directory path for saving all run files
+        project_dir : str
+            Overarching directory path for configuration and run files
         pad_zeros : int
             Number of zeroes to pad in dataset filenames
         seed : int, Generator, optional
             Random seed for the simulation
         """
         # Set random seeds for the entire simulation
-        self.rng = np.random.default_rng(seed)
+        self.initial_seed = seed
+        if seed is None:
+            self.initial_seed = np.random.default_rng().integers(2**32)
+        self.rng = np.random.default_rng(self.initial_seed)
 
         self.start_timestamp = time.time()
         self.last_timestamp = self.start_timestamp
@@ -72,15 +77,19 @@ class Universe(object):
         input_count = 0
         self.dataset_fn = dataset_fn
         if self.dataset_fn is not None:
+            self.dataset_fn = Path(self.dataset_fn).resolve()
             input_count += 1
 
         self.config_fn = config_fn
         if self.config_fn is not None:
+            self.config_fn = Path(self.config_fn).resolve()
             input_count += 1
 
         self.world_param_fn = world_param_fn
         self.species_param_fns = species_param_fns
         if self.world_param_fn is not None and self.species_param_fns is not None:
+            self.world_param_fn = Path(self.world_param_fn).resolve()
+            self.species_param_fns = Path(self.species_param_fns).resolve()
             input_count += 1
             
         self.world_param_dict = world_param_dict
@@ -99,43 +108,43 @@ class Universe(object):
                                       for path in self.custom_module_fns
                                       if os.path.isfile(path)]
 
-        self.run_dir = Path(run_dir).resolve()
-        self.run_dir.mkdir(exist_ok=True)
-        (self.run_dir / 'data').mkdir(exist_ok=True)
-        (self.run_dir / 'logs').mkdir(exist_ok=True)
 
         self.current_time = current_time
         self.end_time = end_time
         self.pad_zeros = pad_zeros
 
-        self.initialize(seed=seed)
+        self.initialize(seed=seed, project_dir=project_dir)
         self.organisms = pf.get_organism_list(self.population_dict)
         self.organisms_by_location = pf.hash_by_location(self.organisms)
         self.species_names = sorted(list(self.population_dict.keys()))
         self.intent_list = []
 
-    def initialize(self, seed=None):
+        self.organism_limit = kwargs.get('organism_limit')
+
+    def initialize(self, seed=None, project_dir=None):
         """
         Initialize world and organisms in the universe, from either saved
         datasets or from parameter files (and subsequently writing the
         initial time step to file).
-
-        Returns
-        -------
-        population_dict : dict
-            Dict of organisms at the beginning of the simulation.
-        world : World
-            World at the beginning of the simulation.
         """
         if self.dataset_fn is not None:
             # Set up entire universe based on saved dataset
-            self.population_dict, self.world, self.rng = dio.load_universe(self.dataset_fn, 
-                                                                           seed=seed)
-            self.current_time = self.world.current_time
+            self.population_dict, self.world, config_params = dio.load_universe(self.dataset_fn, 
+                                                                                seed=seed)
+            self.rng = config_params['rng']
+            self.initial_seed = config_params['initial_seed']
+
+            self.project_dir = self.dataset_fn.parents[2]
+            self.run_data_dir = self.dataset_fn.parents[0]
+            self.run_logs_dir = self.project_dir / 'logs' / self.run_data_dir.name
+            self.run_logs_dir.mkdir(parents=True, exist_ok=True)
         else:
             if self.config_fn is not None:
-                self.population_dict, self.world, self.rng = pio.load_from_config(self.config_fn,
-                                                                                seed=seed)
+                self.population_dict, self.world, config_params = pio.load_from_config(self.config_fn,
+                                                                                       seed=seed)
+                self.rng = config_params['rng']
+                self.initial_seed = config_params['initial_seed']
+                self.current_time = self.world.current_time
             elif self.world_param_fn is not None and self.species_param_fns is not None:
                 self.world = pio.load_world_from_param_file(self.world_param_fn)
                 self.population_dict = pio.load_species_from_param_files(
@@ -153,6 +162,13 @@ class Universe(object):
             else:
                 raise ValueError('No valid intialization provided')
         
+            # Save / directory structure
+            self.project_dir = Path(project_dir).resolve()
+            datestring = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            self.run_data_dir = self.project_dir / 'data' / f'{datestring}-s{self.initial_seed}'
+            self.run_data_dir.mkdir(parents=True, exist_ok=True)
+            self.run_logs_dir = self.project_dir / 'logs' / f'{datestring}-s{self.initial_seed}'
+            self.run_logs_dir.mkdir(parents=True, exist_ok=True)
             dio.save_universe(self)
 
     def step(self):
@@ -185,7 +201,9 @@ class Universe(object):
                 self.intent_list.append(organism.step(self))
 
         # Parse intent list and ensure it is valid
-        self.organisms = parse_intent.parse(self.intent_list, last_organisms)
+        self.organisms = parse_intent.parse(self.intent_list, 
+                                            last_organisms, 
+                                            seed=self.rng)
         self.population_dict = pf.get_population_dict(self.organisms,
                                                       self.species_names)
         self.organisms_by_location = pf.hash_by_location(self.organisms)
@@ -264,53 +282,63 @@ class Universe(object):
             self.step()
             print(self.current_info(verbosity=verbosity, expanded=expanded))
 
+            if self.organism_limit is not None and len(self.organisms) > self.organism_limit:
+                print(f'Exceeded organism limit! ({len(self.organisms)} '
+                      f'> {self.organism_limit})')
+                break
+
 
 @click.command(name='run')
 @click.option('-t', '--timesteps', default=1000,
-              help='Max timestep for run')
+              help='Max timestep')
+@click.option('-l', '--organism_limit', type=int,
+              help='Max number of organisms')
 @click.option('-r', '--restart', is_flag=True, default=False,
               help='Option to erase past data files before run')
 @click.option('-v', '--verbosity', default=4,
               help='Level of progress detail to print')
 @click.option('-s', '--seed', type=int,
               help='Random seed')
-def run_universe(timesteps, restart=False, verbosity=4, seed=None):
-    run_path = Path('.').resolve()
+def run_universe(timesteps=1000, organism_limit=None, restart=False, verbosity=4, seed=None):
+    project_dir = Path('.').resolve()
 
-    logs_path = run_path / 'logs'
-    data_path = run_path / 'data'
+    # logs_path = project_dir / 'logs'
+    # data_path = project_dir / 'data'
 
-    if data_path.is_dir():
-        data_fns = sorted(data_path.glob('*.json'))
-        if len(data_fns) > 0 and not restart:
-            universe = Universe(dataset_fn=data_fns[-1], 
-                                run_dir=run_path,
-                                end_time=timesteps, 
-                                seed=seed)
-            universe.run(verbosity=verbosity, expanded=False)
-            return
+    # if data_path.is_dir():
+    #     data_fns = sorted(data_path.glob('*.json'))
+    #     if len(data_fns) > 0 and not restart:
+    #         universe = Universe(dataset_fn=data_fns[-1], 
+    #                             project_dir=project_dir,
+    #                             end_time=timesteps, 
+    #                             seed=seed,
+    #                             organism_limit=organism_limit)
+    #         universe.run(verbosity=verbosity, expanded=False)
+    #         return
 
-    if restart:
-        if logs_path.is_dir():
-            for fn in logs_path.iterdir():
-                fn.unlink()
-        if data_path.is_dir():
-            for fn in data_path.iterdir():
-                fn.unlink()
+    # if restart:
+    #     if logs_path.is_dir():
+    #         for fn in logs_path.iterdir():
+    #             fn.unlink()
+    #     if data_path.is_dir():
+    #         for fn in data_path.iterdir():
+    #             fn.unlink()
 
     # Run even if not restarting, such as first run
     # Use .yml 
-    config_path = list(run_path.glob('*.yml'))
+    config_path = list(project_dir.glob('*.yml'))
     if len(config_path) == 1:
         config_path = config_path[0]
         with open(config_path, 'r') as f:
             cfg = yaml.load(f, Loader=yaml.FullLoader)
         timesteps = cfg.get('timesteps', timesteps)
+        organism_limit = cfg.get('organism_limit', organism_limit)
 
         universe = Universe(config_fn=config_path, 
-                            run_dir=run_path,
+                            project_dir=project_dir,
                             end_time=timesteps, 
-                            seed=seed)
+                            seed=seed,
+                            organism_limit=organism_limit)
         universe.run(verbosity=verbosity, expanded=False)
         return
     elif len(config_path) == 0:

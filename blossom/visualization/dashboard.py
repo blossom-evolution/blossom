@@ -90,21 +90,23 @@ def dashboard(track_dir, port=8888):
         Input('interval-component', 'n_intervals'),
     )
     def update_dropdown_options(n_intervals):
-        run_dirs = [x for x in track_dir.glob('*') if x.is_dir()]
-        if {track_dir / 'logs', track_dir / 'data'}.issubset(set(run_dirs)):
-            run_dirs = [track_dir]
-        return sorted([str(x) for x in run_dirs])
+        run_dirs = [x for x in track_dir.glob('logs/*') if x.is_dir()]
+        # if {track_dir / 'logs', track_dir / 'data'}.issubset(set(run_dirs)):
+        #     run_dirs = [track_dir]
+        return sorted([str(x.name) for x in run_dirs])
         
     @callback(
         Output('dataset-dropdown', 'value'),
         Input('dropdown-dummy-div', 'children')
     )
     def set_dropdown_value(children):
-        run_dirs = [x for x in track_dir.glob('*') if x.is_dir()]
-        if {track_dir / 'logs', track_dir / 'data'}.issubset(set(run_dirs)):
-            return str(track_dir)
+        run_dirs = [x for x in track_dir.glob('logs/*') if x.is_dir()]
+        # if {track_dir / 'logs', track_dir / 'data'}.issubset(set(run_dirs)):
+        #     return str(track_dir)
+        if len(run_dirs) == 0:
+            return None
         recent_idx = np.argmax([x.stat().st_mtime for x in run_dirs])
-        return str(run_dirs[recent_idx])
+        return str(run_dirs[recent_idx].name)
     
     @callback(
         Output('elapsed-badge', 'children'),
@@ -119,12 +121,12 @@ def dashboard(track_dir, port=8888):
         Output('elapsed-store', 'data'),
         Input('dataset-dropdown', 'value')
     )
-    def update_figure_on_dropdown(run_dir):
+    def update_figure_on_dropdown(run_name):
         figure = make_subplots(rows=3, cols=1,
                                shared_xaxes=True,
                                vertical_spacing=0.15,
                                subplot_titles=('Alive', 'Dead', 'Ratio'))
-        figure.update_layout(uirevision=run_dir, 
+        figure.update_layout(uirevision=run_name, 
                              xaxis_showticklabels=True, 
                              xaxis2_showticklabels=True, 
                              margin=dict(t=50))
@@ -134,8 +136,9 @@ def dashboard(track_dir, port=8888):
         figure.update_xaxes(title_text='Timestep', autorange=True, 
                             row=3, col=1)
         # figure.update_layout(height=600, uirevision=True, margin=dict(t=40))
-        if run_dir is not None:
-            all_fns = [str(x) for x in Path(run_dir).glob('logs/*')]
+        if run_name is not None:
+            run_dir = track_dir / 'logs' / run_name
+            all_fns = [str(x) for x in Path(run_dir).glob('*.log')]
             if all_fns != []:
                 species = list(read_log(all_fns[0])['species'].keys())
                 for i, s in enumerate(species):
@@ -183,12 +186,14 @@ def dashboard(track_dir, port=8888):
         State('elapsed-store', 'data'),
         prevent_initial_call=True
     )
-    def update_multiplot_data(n_intervals, run_dir, figure, dataset_fns, elapsed_time):
-        if run_dir is None:
+    def update_multiplot_data(n_intervals, run_name, figure, dataset_fns, elapsed_time):
+        if run_name is None:
             return None, dataset_fns, 0
+        run_dir = track_dir / 'logs' / run_name
+
         dataset_fns = dataset_fns or {'analyzed_fns': []}
 
-        all_fns = [str(x) for x in Path(run_dir).glob('logs/*')]
+        all_fns = [str(x) for x in Path(run_dir).glob('*.log')]
         fns = sorted(set(all_fns) - set(dataset_fns['analyzed_fns']))
 
         if len(all_fns) == 0:

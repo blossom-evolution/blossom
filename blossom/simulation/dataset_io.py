@@ -30,7 +30,7 @@ def load_universe(fn, seed=None):
         A dict of Organism objects reconstructed from the saved dataset
     world : World
         World object reconstructed from the saved dataset
-    rng : Generator
+    seed : int, Generator
         Numpy random number generator from last timestep
     """
     with open(fn, 'r') as f:
@@ -50,12 +50,19 @@ def load_universe(fn, seed=None):
 
     seed_fn = Path(fn).with_suffix('.seed')
     if seed is None and seed_fn.is_file():
+        seed = universe_dict['info']['initial_seed']
         with open(seed_fn, 'rb') as f:
             rng = pickle.load(f)
     else:
+        if seed is None:
+            seed = np.random.default_rng().integers(2**32)
         rng = np.random.default_rng(seed)
+    config_params = {
+        'initial_seed': seed,
+        'rng': rng
+    }
 
-    return population_dict, world, rng
+    return population_dict, world, config_params
 
 
 def save_universe(universe):
@@ -69,10 +76,10 @@ def save_universe(universe):
     """
     padded_time = str(universe.current_time).zfill(universe.pad_zeros)
     data_fn = (
-        universe.run_dir / f'data/{universe.run_dir.name}.{padded_time}.json'
+        universe.run_data_dir / f'{universe.project_dir.name}.{padded_time}.json'
     )
     log_fn = (
-        universe.run_dir / f'logs/{universe.run_dir.name}.{padded_time}.log'
+        universe.run_logs_dir / f'{universe.project_dir.name}.{padded_time}.log'
     )
 
     population_dict_json = {}
@@ -85,7 +92,10 @@ def save_universe(universe):
         ]
     universe_dict = {
         'population': population_dict_json,
-        'world': universe.world.to_dict()
+        'world': universe.world.to_dict(),
+        'info': {
+            'initial_seed': universe.initial_seed
+        }
     }
     with open(data_fn, 'w') as f:
         json.dump(universe_dict, f, indent=2, cls=NPEncoder)
@@ -98,19 +108,22 @@ def save_universe(universe):
         'world': {
             'timestep': universe.world.current_time,
             'elapsed_time': universe.elapsed_time
+        },
+        'info': {
+            'initial_seed': universe.initial_seed
         }
     }
     with open(log_fn, 'w') as f:
-        json.dump(log_dict, f, indent=2)
+        json.dump(log_dict, f, indent=2, cls=NPEncoder)
 
     # Save seed information for last completed timestep
     last_padded_time = str(universe.current_time-1).zfill(universe.pad_zeros)
     last_seed_fn = (
-        universe.run_dir / f'data/{universe.run_dir.name}.{last_padded_time}.seed'
+        universe.run_data_dir / f'{universe.project_dir.name}.{last_padded_time}.seed'
     )
     last_seed_fn.unlink(missing_ok=True)
     seed_fn = (
-        universe.run_dir / f'data/{universe.run_dir.name}.{padded_time}.seed'
+        universe.run_data_dir / f'{universe.project_dir.name}.{padded_time}.seed'
     )
     with open(seed_fn, 'wb') as f:
         pickle.dump(universe.rng, f)

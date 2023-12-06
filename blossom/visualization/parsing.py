@@ -6,7 +6,9 @@ import matplotlib
 matplotlib.use('TkAgg') 
 import matplotlib.pyplot as plt
 import numpy as np
-import blossom
+
+from blossom import dataset_io
+from blossom import population_funcs
 
 
 def read_log(fn):
@@ -20,9 +22,9 @@ class Snapshot(object):
     """
 
     def __init__(self, dataset_fn):
-        self.population_dict, self.world, _ = blossom.dataset_io.load_universe(dataset_fn)
-        self.organisms_by_location = blossom.hash_by_location(
-            blossom.get_organism_list(self.population_dict)
+        self.population_dict, self.world, _ = dataset_io.load_universe(dataset_fn)
+        self.organisms_by_location = population_funcs.hash_by_location(
+            population_funcs.get_organism_list(self.population_dict)
         )
         self.current_time = self.world.current_time
 
@@ -35,10 +37,10 @@ class Snapshot(object):
         for i in range(temp_img.shape[0]):
             for j in range(temp_img.shape[1]):
                 temp_img[i][j] += attr_func(ds=self,
-                                            location=(i, j))
+                                            loc=(i, j))
 
         plt.title(label)
-        plt.imshow(temp_img, interpolate='none')
+        plt.imshow(temp_img, interpolation='none')
         plt.colorbar()
 
 
@@ -49,7 +51,7 @@ class TimeSeries(object):
 
     def __init__(self, dataset_dir):
         self.dataset_dir = Path(dataset_dir)
-        self.dataset_fns = sorted(self.dataset_dir.glob('ds*'))
+        self.dataset_fns = sorted(self.dataset_dir.glob('*.json'))
         self.index = 0
 
     def __iter__(self):

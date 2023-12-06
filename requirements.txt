@@ -8,3 +8,4 @@ click
 humanfriendly
 PyYAML
 matplotlib
+imageio

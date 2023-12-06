@@ -12,7 +12,7 @@ from pathlib import Path
 import json 
 import humanfriendly
 
-from .parsing import read_log, Snapshot
+from .parsing import read_log
 
 
 @click.command()
@@ -38,7 +38,7 @@ def dashboard(track_dir, port=8888):
         html.H1('blossom dashboard'),
         html.Div([
             html.Label('Location:', style={"padding-right": "0.5rem"}),
-            dbc.Badge(str(track_dir.resolve()), color='primary')
+            dbc.Badge(str(track_dir.resolve()), color='info')
         ], style={'padding': 10, 'flex': 1}),
         # html.Hr(),
         html.Div([
@@ -61,9 +61,15 @@ def dashboard(track_dir, port=8888):
             ], style={'padding': 10, 'flex': 1}),
         ], style={'display': 'flex', 'flexDirection': 'row'}),
         html.Div([
-            html.Label('Cumulative elapsed time:', style={"padding-right": "0.5rem"}),
-            dbc.Badge(id='elapsed-badge', color='success')
-        ], style={'padding': 10, 'flex': 1}),
+            html.Div([
+                html.Label('Cumulative elapsed time:', style={"padding-right": "0.5rem"}),
+                dbc.Badge(id='elapsed-badge', color='success')
+            ], style={'padding': 10, 'flex': 1}),
+            html.Div([
+                html.Label('Data volume:', style={"padding-right": "0.5rem"}),
+                dbc.Badge(id='size-badge', color='primary')
+            ], style={'padding': 10, 'flex': 1}),
+        ], style={'display': 'flex', 'flexDirection': 'row'}),
         dcc.Graph(
             id='multiplot-graph', 
             animate=True,
@@ -71,6 +77,7 @@ def dashboard(track_dir, port=8888):
         ),
         html.Div(id='dropdown-dummy-div'),
         dcc.Store(id='elapsed-store'),
+        dcc.Store(id='size-store'),
         dcc.Store(id='dataset-filenames-store'),
         dcc.Interval(
             id='interval-component', 
@@ -114,11 +121,19 @@ def dashboard(track_dir, port=8888):
     )
     def update_elapsed_label(elapsed_time):
         return humanfriendly.format_timespan(elapsed_time)
+    
+    @callback(
+        Output('size-badge', 'children'),
+        Input('size-store', 'data')
+    )
+    def update_size_label(size):
+        return humanfriendly.format_size(size)
 
     @callback(
         Output('multiplot-graph', 'figure'),
         Output('dataset-filenames-store', 'data'),
         Output('elapsed-store', 'data'),
+        Output('size-store', 'data'),
         Input('dataset-dropdown', 'value')
     )
     def update_figure_on_dropdown(run_name):
@@ -162,7 +177,7 @@ def dashboard(track_dir, port=8888):
                                                   line=dict(color='black'),
                                                   name='ratio',
                                                   showlegend=False))
-                return figure, {'analyzed_fns': []}, 0
+                return figure, {'analyzed_fns': []}, 0, 0
             
         figure.add_trace(row=1, col=1,
                          trace=go.Scatter(x=[], 
@@ -173,22 +188,24 @@ def dashboard(track_dir, port=8888):
         figure.add_trace(row=3, col=1,
                          trace=go.Scatter(x=[], 
                                           y=[],))
-        return figure, {'analyzed_fns': []}, 0
+        return figure, {'analyzed_fns': []}, 0, 0
 
     @callback(
         Output('multiplot-graph', 'extendData'),
         Output('dataset-filenames-store', 'data', allow_duplicate=True),
         Output('elapsed-store', 'data', allow_duplicate=True),
+        Output('size-store', 'data', allow_duplicate=True),
         Input('interval-component', 'n_intervals'),
         State('dataset-dropdown', 'value'),
         State('multiplot-graph', 'figure'),
         State('dataset-filenames-store', 'data'),
         State('elapsed-store', 'data'),
+        State('size-store', 'data'),
         prevent_initial_call=True
     )
-    def update_multiplot_data(n_intervals, run_name, figure, dataset_fns, elapsed_time):
+    def update_multiplot_data(n_intervals, run_name, figure, dataset_fns, elapsed_time, size):
         if run_name is None:
-            return None, dataset_fns, 0
+            return None, dataset_fns, 0, 0
         run_dir = track_dir / 'logs' / run_name
 
         dataset_fns = dataset_fns or {'analyzed_fns': []}
@@ -197,7 +214,7 @@ def dashboard(track_dir, port=8888):
         fns = sorted(set(all_fns) - set(dataset_fns['analyzed_fns']))
 
         if len(all_fns) == 0:
-            return None, dataset_fns, 0
+            return None, dataset_fns, 0, 0
         species = list(read_log(all_fns[0])['species'].keys())
 
         x = []
@@ -207,6 +224,7 @@ def dashboard(track_dir, port=8888):
             x.append(log_dict['world']['timestep'])
             y.append(log_dict['species'])
             elapsed_time += log_dict['world']['elapsed_time']
+            size += log_dict['info']['size']
         y_alive = {s: [d[s]['alive'] for d in y] for s in species}
         y_dead = {s: [d[s]['dead'] for d in y] for s in species}
         y_ratio = [d[species[1]]['alive']/d[species[0]]['alive'] for d in y]
@@ -219,7 +237,7 @@ def dashboard(track_dir, port=8888):
             list(range(2 * len(species) + 1))
         ]
         dataset_fns['analyzed_fns'].extend(fns)
-        return extendData, dataset_fns, elapsed_time
+        return extendData, dataset_fns, elapsed_time, size
     
     app.run(port=port, debug=True)
 

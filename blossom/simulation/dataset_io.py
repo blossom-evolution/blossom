@@ -110,7 +110,8 @@ def save_universe(universe):
             'elapsed_time': universe.elapsed_time
         },
         'info': {
-            'initial_seed': universe.initial_seed
+            'initial_seed': universe.initial_seed,
+            'size': data_fn.stat().st_size
         }
     }
     with open(log_fn, 'w') as f:

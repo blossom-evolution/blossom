@@ -9,3 +9,4 @@ humanfriendly
 PyYAML
 matplotlib
 imageio
+sphinx-rtd-theme>=0.4.3

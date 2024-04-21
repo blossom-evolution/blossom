@@ -33,12 +33,13 @@ def organism_filter(organism_list, *conditions):
     input and returns a boolean as output.
 
     Example:
-    
+
     .. code-block:: python
 
         organism_filter(
             population_dict['prey1']['organisms'],
-            lambda organism: (organism.alive)
+            lambda organism: organism.alive
+        )
     """
     remaining_list = organism_list
     for condition in conditions:

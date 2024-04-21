@@ -33,6 +33,7 @@ def organism_filter(organism_list, *conditions):
     input and returns a boolean as output.
 
     Example:
+    
     .. code-block:: python
 
         organism_filter(

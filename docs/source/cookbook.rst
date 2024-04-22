@@ -18,39 +18,39 @@ Your config file might look like this:
 .. code-block:: yaml
 
     species:
-    - name: predator
+      - name: predator
         population: 100
         max_age: inf
         action: predator_action
         movement: simple_random
         reproduction:
-        type: pure_replication
+          type: pure_replication
         eating:
-        type: eat_prey
-        capacity: 250
-        initial: 200
-        metabolism: 10
-        intake: 80
-        days_without: 5
+          type: eat_prey
+          capacity: 250
+          initial: 200
+          metabolism: 10
+          intake: 80
+          days_without: 5
         linked_modules:
-        - custom.py
-    - name: prey
+          - custom.py
+      - name: prey
         population: 500
         max_age: inf
         action: prey_action
         movement: simple_random
         reproduction:
-        type: pure_replication
+          type: pure_replication
         linked_modules:
-        - custom.py
+          - custom.py
     world:
-    dimensionality: 2
-    size: [1, 100]
-    water:
+      dimensionality: 2
+      size: [1, 100]
+      water:
         peak: inf 
-    food: 
+      food: 
         peak: inf 
-    obstacles:
+      obstacles:
         peak: 0 
     timesteps: 5000
     organism_limit: 20000

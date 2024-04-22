@@ -40,4 +40,4 @@ Initiate the dashboard, run
 where ``TRACK_DIR`` is the simulation project directory. You can then view the 
 dashboard at ``localhost:PORT``.
 
-.. image:: media/blossom-dashboard.png
+.. image:: ../../media/blossom-dashboard.png

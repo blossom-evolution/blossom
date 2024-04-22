@@ -2,7 +2,7 @@ import uuid
 import copy
 import imp
 import sys
-import random
+import numpy as np
 
 from . import default_fields
 from .utils import cast_to_list
@@ -14,7 +14,7 @@ class Organism(object):
     A basic organism structure for all species.
     """
 
-    def __init__(self, init_dict={}):
+    def __init__(self, init_dict={}, seed=None):
         """
         Create a new organism from a dictary of parameters. The dictionary
         is specified in blossom.default_fields.
@@ -31,8 +31,7 @@ class Organism(object):
 
         # Set unique id for organism
         if self.organism_id is None:
-            # self.organism_id = str(uuid.uuid4())
-            self.organism_id = self.get_new_id()
+            self.organism_id = self.get_new_id(seed=seed)
 
         # Set current water level for uninitialized organism
         if self.drinking_type is not None and self.water_current is None:
@@ -59,11 +58,12 @@ class Organism(object):
                        if not key.startswith('_')}
         return public_vars
 
-    def get_new_id(self):
+    def get_new_id(self, seed=None):
         """
         Generates pseudo-random ID for the organism, seeded by the universe.
         """
-        return str(uuid.UUID(int=random.getrandbits(128)))
+        rng = np.random.default_rng(seed)
+        return str(uuid.UUID(bytes=rng.bytes(16)))
 
     @classmethod
     def clone(cls, organism):
@@ -83,7 +83,7 @@ class Organism(object):
         new_organism = cls(organism.to_dict())
         # Use copy module to properly handle mutable lists
         new_organism.ancestry = copy.copy(new_organism.ancestry)
-        new_organism.position = copy.copy(new_organism.position)
+        new_organism.location = copy.copy(new_organism.location)
         return new_organism
 
     def clone_self(self):
@@ -92,7 +92,7 @@ class Organism(object):
         """
         return self.clone(self)
 
-    def get_child(self, other_parent=None):
+    def get_child(self, other_parent=None, seed=None):
         """
         Creates an Organism object with similar properties to self, and can
         add another parent if it exists. Note that this doesn't assume
@@ -111,7 +111,7 @@ class Organism(object):
         """
         child = self.clone_self()
         child.age = 0
-        child.organism_id = child.get_new_id()
+        child.organism_id = child.get_new_id(seed=seed)
         if other_parent is None:
             child.ancestry.append(self.organism_id)
         else:
@@ -157,23 +157,19 @@ class Organism(object):
         elif method == 'append':
             attribute.append(value)
         else:
-            sys.exit('Invalid update method!')
+            raise ValueError('Invalid update method!')
         setattr(updated_organism, parameter, attribute)
         return updated_organism
 
-    def move(self, population_dict, world, position_hash_table=None):
+    def move(self, universe):
         """
         Method for handling movement. Searches through custom methods and
         built-in movement methods.
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table : dict
-            Dictionary mapping positions to available organisms.
+        universe : Universe
+            Universe containing organism
 
         Returns
         -------
@@ -182,21 +178,17 @@ class Organism(object):
         """
         try:
             if self.movement_type is None:
-                sys.exit('No movement type defined!')
+                raise ValueError('No movement type defined!')
             elif self.custom_module_fns is not None:
                 for custom_module in self._custom_modules:
                     if hasattr(custom_module, self.movement_type):
                         return getattr(custom_module, self.movement_type)(
                             self,
-                            population_dict,
-                            world,
-                            position_hash_table=position_hash_table
+                            universe
                         )
             return getattr(movement, self.movement_type)(
                 self,
-                population_dict,
-                world,
-                position_hash_table=position_hash_table
+                universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -206,19 +198,15 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def reproduce(self, population_dict, world, position_hash_table=None):
+    def reproduce(self, universe):
         """
         Method for handling reproduction. Searches through custom methods
         and built-in reproduction methods.
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table : dict
-            Dictionary mapping positions to available organisms.
+        universe : Universe
+            Universe containing organism
 
         Returns
         -------
@@ -230,21 +218,17 @@ class Organism(object):
         """
         try:
             if self.reproduction_type is None:
-                sys.exit('No reproduction type defined!')
+                raise ValueError('No reproduction type defined!')
             elif self.custom_module_fns is not None:
                 for custom_module in self._custom_modules:
                     if hasattr(custom_module, self.reproduction_type):
                         return getattr(custom_module, self.reproduction_type)(
                             self,
-                            population_dict,
-                            world,
-                            position_hash_table=position_hash_table
+                            universe
                         )
             return getattr(reproduction, self.reproduction_type)(
                 self,
-                population_dict,
-                world,
-                position_hash_table=position_hash_table
+                universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -254,19 +238,15 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def drink(self, population_dict, world, position_hash_table=None):
+    def drink(self, universe):
         """
         Method for handling drinking. Searches through custom methods and
         built-in drinking methods.
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table : dict
-            Dictionary mapping positions to available organisms.
+        universe : Universe
+            Universe containing organism
 
         Returns
         -------
@@ -276,21 +256,17 @@ class Organism(object):
         """
         try:
             if self.drinking_type is None:
-                sys.exit('No drinking type defined!')
+                raise ValueError('No drinking type defined!')
             elif self.custom_module_fns is not None:
                 for custom_module in self._custom_modules:
                     if hasattr(custom_module, self.drinking_type):
                         return getattr(custom_module, self.drinking_type)(
                             self,
-                            population_dict,
-                            world,
-                            position_hash_table=position_hash_table
+                            universe
                         )
             return getattr(drinking, self.drinking_type)(
                 self,
-                population_dict,
-                world,
-                position_hash_table=position_hash_table
+                universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -300,19 +276,15 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def eat(self, population_dict, world, position_hash_table=None):
+    def eat(self, universe):
         """
         Method for handling eating. Searches through custom methods and
         built-in eating methods.
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table : dict
-            Dictionary mapping positions to available organisms.
+        universe : Universe
+            Universe containing organism
 
         Returns
         -------
@@ -322,21 +294,17 @@ class Organism(object):
         """
         try:
             if self.eating_type is None:
-                sys.exit('No eating type defined!')
+                raise ValueError('No eating type defined!')
             elif self.custom_module_fns is not None:
                 for custom_module in self._custom_modules:
                     if hasattr(custom_module, self.eating_type):
                         return getattr(custom_module, self.eating_type)(
                             self,
-                            population_dict,
-                            world,
-                            position_hash_table=position_hash_table
+                            universe
                         )
             return getattr(eating, self.eating_type)(
                 self,
-                population_dict,
-                world,
-                position_hash_table=position_hash_table
+                universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -346,7 +314,7 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-    def act(self, population_dict, world, position_hash_table=None):
+    def act(self, universe):
         """
         Method that decides and calls an action for the current timestep.
         Searches through custom methods and built-in movement methods.
@@ -357,12 +325,8 @@ class Organism(object):
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table : dict
-            Dictionary mapping positions to available organisms.
+        universe : Universe
+            Universe containing organism
 
         Returns
         -------
@@ -377,16 +341,12 @@ class Organism(object):
                     if hasattr(custom_module, self.action_type):
                         action_name = getattr(custom_module, self.action_type)(
                             self,
-                            population_dict,
-                            world,
-                            position_hash_table=position_hash_table
+                            universe
                         )
             if action_name is None:
                 action_name = getattr(action, self.action_type)(
                     self,
-                    population_dict,
-                    world,
-                    position_hash_table=position_hash_table
+                    universe
                 )
         except AttributeError as e:
             raise AttributeError(
@@ -399,9 +359,7 @@ class Organism(object):
         self.last_action = action_name
 
         affected_organisms = cast_to_list(getattr(self, action_name)(
-            population_dict,
-            world,
-            position_hash_table=position_hash_table
+            universe
         ))
 
         # Ensure this organism is included in affected_organisms
@@ -485,7 +443,7 @@ class Organism(object):
             return (self.eating_type is not None
                     and self.time_without_food > self.max_time_without_food)
         else:
-            sys.exit('Invalid cause!')
+            raise ValueError('Invalid cause!')
 
     def die(self, cause, in_place=False, original=None):
         """
@@ -518,7 +476,7 @@ class Organism(object):
                                                              original=original)
         return updated_organism
 
-    def step(self, population_dict, world, position_hash_table=None, do_action=True):
+    def step(self, universe, do_action=True):
         """
         Steps through one time step for this organism. Reflects changes
         based on actions / behaviors and updates to health parameters.
@@ -528,12 +486,8 @@ class Organism(object):
 
         Parameters
         ----------
-        population_dict : dict of Organisms
-            Dict of organisms, with which this organism may interact.
-        world : World
-            World, with which this organism may interact.
-        position_hash_table: dict
-            Dictionary of organisms "hashed" by position.
+        universe : Universe
+            Universe containing organism
         do_action: bool
             If True, this organism will act, otherwise, it will not.
 
@@ -556,11 +510,7 @@ class Organism(object):
             return [organism.die('old_age')]
 
         if do_action:
-            organism, affected_organisms = organism.act(
-                population_dict,
-                world,
-                position_hash_table=position_hash_table
-            )
+            organism, affected_organisms = organism.act(universe)
         else:
             affected_organisms = [organism]
 
@@ -593,7 +543,4 @@ class Organism(object):
             Note that this returns an Organism object, not a list.
 
         """
-        return self.step(population_dict=None,
-                         world=None,
-                         position_hash_table=None,
-                         do_action=False)[0]
+        return self.step(universe=None, do_action=False)[0]

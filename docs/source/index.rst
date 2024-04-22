@@ -17,6 +17,7 @@ Table of Contents
       :maxdepth: 1
 
       install
+      basic_usage
       cookbook
       blossom
 

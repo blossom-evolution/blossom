@@ -1,7 +1,12 @@
 uuid
 numpy
+pandas
 configparser
 dash
 dash-bootstrap-components
 click
 humanfriendly
+PyYAML
+matplotlib
+imageio
+sphinx-rtd-theme>=0.4.3

@@ -1,44 +1,29 @@
-import random
-
-
-def move_only(organism, population_dict, world, position_hash_table=None):
+def move_only(organism, universe):
     """
     Only move.
     """
     return 'move'
 
 
-def move_and_reproduce(organism, population_dict, world, position_hash_table=None):
+def move_and_reproduce(organism, universe):
     """
     Move and reproduce. Reproduction occurs with probability 1/8.
     """
-    choice = random.randrange(0, 8)
-    if choice == 0:
-        return 'reproduce'
-    else:
-        return 'move'
+    return universe.rng.choice(['reproduce', 'move'], 
+                               p=[1/8, 7/8])
 
 
-def move_and_drink(organism, population_dict, world, position_hash_table=None):
+def move_and_drink(organism, universe):
     """
     Move and drink. Each occurs with probability 1/2.
     """
-    choice = random.randrange(0, 8)
-    if choice < 4:
-        return 'drink'
-    else:
-        return 'move'
+    return universe.rng.choice(['drink', 'move'])
 
 
-def move_reproduce_drink(organism, population_dict, world, position_hash_table=None):
+def move_reproduce_drink(organism, universe):
     """
     Move, drink, and reproduce. Reproduction occurs with probability 1/8.
     Drinks with probability 3/8, and moves with probability 1/2.
     """
-    choice = random.randrange(0, 8)
-    if choice == 0:
-        return 'reproduce'
-    elif choice < 4:
-        return 'drink'
-    else:
-        return 'move'
+    return universe.rng.choice(['reproduce', 'drink', 'move'], 
+                               p=[1/8, 3/8, 1/2])

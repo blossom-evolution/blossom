@@ -1,49 +1,47 @@
-import sys
-import random
-
-
-def stationary(organism, population_dict, world, position_hash_table=None):
+def stationary(organism, universe):
     """
     Organism stays still.
     """
     return [organism]
 
 
-def simple_random(organism, population_dict, world, position_hash_table=None):
+def simple_random(organism, universe):
     """
     Move in random direction with equal probability. For 2D, organisms walk
     diagonally.
     """
-    position = organism.position
-    size = world.world_size
+    location = organism.location
+    size = universe.world.world_size
 
     if len(size) == 1:
-        [x] = position
-        choice = random.randint(0, 2)
-        if choice == 0 and x != 0:
-            x -= 1
-        elif choice == 1 and x != size[0] - 1:
-            x += 1
-        else:
-            pass
-        organism.position = [x]
+        [x] = location
+
+        choice = universe.rng.choice([-1, 1])
+        x += choice 
+        if x == -1:
+            x = 0
+        elif x == size[0]:
+            x = size[0] - 1
+            
+        organism.location = [x]
     elif len(size) == 2:
-        [x, y] = position
-        x_choice = random.randint(0, 2)
-        y_choice = random.randint(0, 2)
-        if x_choice == 0 and x != 0:
-            x -= 1
-        elif x_choice == 1 and x != size[0] - 1:
-            x += 1
-        else:
-            pass
-        if y_choice == 0 and y != 0:
-            y -= 1
-        elif y_choice == 1 and y != size[1] - 1:
-            y += 1
-        else:
-            pass
-        organism.position = [x, y]
+        [x, y] = location
+
+        x_choice = universe.rng.choice([-1, 1])
+        x += x_choice 
+        if x == -1:
+            x = 0
+        elif x == size[0]:
+            x = size[0] - 1
+
+        y_choice = universe.rng.choice([-1, 1])
+        y += y_choice 
+        if y == -1:
+            y = 0
+        elif y == size[1]:
+            y = size[1] - 1
+            
+        organism.location = [x, y]
     else:
-        sys.exit('Invalid world dimensionality!')
+        raise ValueError(f'Invalid world dimensionality: {len(size)}')
     return [organism]

@@ -3,7 +3,8 @@ import os
 import click
 
 from ._version import __version__ 
-from .visualization import dashboard
+from .simulation import universe
+from .visualization import dashboard, render
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -17,7 +18,9 @@ def cli(ctx):
     pass 
 
 
+cli.add_command(universe.run_universe)
 cli.add_command(dashboard.dashboard)
+cli.add_command(render.make_gif)
 
 
 if __name__ == '__main__':

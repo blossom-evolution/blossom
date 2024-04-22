@@ -58,6 +58,6 @@ dashboard at `localhost:PORT`.
 ![dashboard screenshot](media/blossom-dashboard.png)
 
 
-### GIF of basic simulation
+## GIF of Simple 100 x 100 Simulation
 
 ![example simulation](media/combined.gif)

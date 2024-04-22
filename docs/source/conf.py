@@ -25,7 +25,7 @@ with open(blossom_path / "blossom/_version.py") as fp:
 # -- Project information -----------------------------------------------------
 
 project = 'blossom'
-copyright = '2018-2023, Bryan Brzycki'
+copyright = '2018-2024, Bryan Brzycki'
 author = 'Bryan Brzycki'
 
 # The short X.Y version

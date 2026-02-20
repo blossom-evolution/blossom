@@ -3,8 +3,33 @@ import setuptools
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
-with open("requirements.txt", "r") as f:
-    install_requires = f.readlines()
+
+def load_requirements(path):
+    """Load requirement lines, skipping blanks and comments.
+
+    Args:
+        path: Relative path to a requirements file.
+
+    Returns:
+        List of normalized requirement specifiers.
+    """
+    requirements = []
+    with open(path, "r") as f:
+        for line in f:
+            req = line.strip()
+            if not req or req.startswith("#"):
+                continue
+            requirements.append(req)
+    return requirements
+
+
+install_requires = load_requirements("requirements.txt")
+test_requires = [
+    "pytest>=8.0.0",
+]
+dev_requires = [
+    *test_requires,
+]
 
 entry_points = {
     'console_scripts': [
@@ -31,6 +56,10 @@ setuptools.setup(
     entry_points=entry_points,
     packages=setuptools.find_packages(),
     install_requires=install_requires,
+    extras_require={
+        'test': test_requires,
+        'dev': dev_requires
+    },
     classifiers=(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',

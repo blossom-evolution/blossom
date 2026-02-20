@@ -6,6 +6,16 @@ datasets/
 old_files/
 scripts/datasets
 
+# Simulation run artifacts (generated outputs; do not commit)
+data/
+logs/
+results/
+**/data/*-s*/
+**/logs/*-s*/
+**/repeat_*/
+planning/results/
+*.seed
+
 # Specific files
 sample_realtime_plot.py
 blossom_structure_brainstorming.txt

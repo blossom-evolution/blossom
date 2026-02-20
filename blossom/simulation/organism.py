@@ -1,7 +1,7 @@
 import uuid
 import copy
-import imp
 import sys
+import importlib.util
 import numpy as np
 
 from . import default_fields
@@ -13,6 +13,19 @@ class Organism(object):
     """
     A basic organism structure for all species.
     """
+
+    @staticmethod
+    def _load_custom_module(path, module_idx):
+        """
+        Load a custom behavior module from a file path.
+        """
+        module_name = f'blossom_custom_{module_idx}_{uuid.uuid4().hex}'
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f'Could not load custom module from path: {path}')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
 
     def __init__(self, init_dict={}, seed=None):
         """
@@ -45,7 +58,7 @@ class Organism(object):
         if self.custom_module_fns is not None:
             self._custom_modules = []
             for i, path in enumerate(cast_to_list(self.custom_module_fns)):
-                temp_module = imp.load_source('%s' % i, path)
+                temp_module = self._load_custom_module(path, i)
                 self._custom_modules.append(temp_module)
 
     def to_dict(self):

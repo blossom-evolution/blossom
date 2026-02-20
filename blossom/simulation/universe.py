@@ -3,6 +3,7 @@ import os
 import yaml
 from pathlib import Path
 import datetime
+from typing import Any
 
 import time
 import numpy as np
@@ -20,19 +21,19 @@ class Universe(object):
     """
 
     def __init__(self,
-                 dataset_fn=None,
-                 config_fn=None,
-                 world_param_fn=None,
-                 species_param_fns=None,
-                 world_param_dict={},
-                 species_param_dicts=[{}],
-                 custom_module_fns=None,
-                 current_time=0,
-                 end_time=1000,
-                 project_dir='datasets/',
-                 pad_zeros=4,
+                 dataset_fn: str | Path | None = None,
+                 config_fn: str | Path | None = None,
+                 world_param_fn: str | Path | None = None,
+                 species_param_fns: list[str] | str | Path | None = None,
+                 world_param_dict: dict[str, Any] = {},
+                 species_param_dicts: list[dict[str, Any]] = [{}],
+                 custom_module_fns: list[str] | None = None,
+                 current_time: int = 0,
+                 end_time: int = 1000,
+                 project_dir: str | Path = 'datasets/',
+                 pad_zeros: int = 4,
                  seed=None,
-                 **kwargs):
+                 **kwargs: Any) -> None:
         """
         Initialize universe based on either parameter files or saved datasets.
 
@@ -73,6 +74,16 @@ class Universe(object):
         self.start_timestamp = time.time()
         self.last_timestamp = self.start_timestamp
         self.elapsed_time = 0
+        self.last_step_compute_time = 0.0
+        self.last_step_write_time = 0.0
+        self.step_count = 0
+        self.total_compute_time = 0.0
+        self.total_write_time = 0.0
+        self.total_data_bytes = 0
+        self.total_log_bytes = 0
+        self.total_seed_bytes = 0
+        self.total_output_bytes = 0
+        self.total_output_files = 0
 
         input_count = 0
         self.dataset_fn = dataset_fn
@@ -112,6 +123,22 @@ class Universe(object):
         self.current_time = current_time
         self.end_time = end_time
         self.pad_zeros = pad_zeros
+        self.snapshot_interval = self._validate_interval(
+            name='snapshot_interval',
+            value=kwargs.get('snapshot_interval', 1),
+            allow_none=False
+        )
+        self.log_interval = self._validate_interval(
+            name='log_interval',
+            value=kwargs.get('log_interval', 1),
+            allow_none=False
+        )
+        self.retain_last_checkpoints = self._validate_interval(
+            name='retain_last_checkpoints',
+            value=kwargs.get('retain_last_checkpoints'),
+            allow_none=True
+        )
+        self.compact_json_output = bool(kwargs.get('compact_json_output', False))
 
         self.initialize(seed=seed, project_dir=project_dir)
         self.organisms = pf.get_organism_list(self.population_dict)
@@ -121,7 +148,60 @@ class Universe(object):
 
         self.organism_limit = kwargs.get('organism_limit')
 
-    def initialize(self, seed=None, project_dir=None):
+    def _validate_interval(self, name: str, value: Any, allow_none: bool) -> int | None:
+        """Validate interval-style configuration fields.
+
+        Args:
+            name: Name of the interval field.
+            value: User-supplied value to validate.
+            allow_none: Whether ``None`` is allowed.
+
+        Returns:
+            The validated integer value or ``None``.
+
+        Raises:
+            ValueError: If the value is not valid.
+        """
+        if value is None and allow_none:
+            return None
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError(f'`{name}` must be a positive integer')
+        return value
+
+    def _should_write_snapshot(self) -> bool:
+        """Return whether the current timestep should write a snapshot."""
+        return self.current_time % self.snapshot_interval == 0
+
+    def _should_write_log(self) -> bool:
+        """Return whether the current timestep should write a log entry."""
+        return self.current_time % self.log_interval == 0
+
+    def _prune_checkpoints(self) -> None:
+        """Prune old checkpoint data files based on retention policy."""
+        if self.retain_last_checkpoints is None:
+            return
+        snapshot_fns = sorted(self.run_data_dir.glob('*.json'))
+        if len(snapshot_fns) <= self.retain_last_checkpoints:
+            return
+
+        for old_fn in snapshot_fns[:-self.retain_last_checkpoints]:
+            old_fn.unlink(missing_ok=True)
+            old_fn.with_suffix('.seed').unlink(missing_ok=True)
+
+    def _update_output_stats(self, io_stats: dict[str, int | float] | None) -> None:
+        """
+        Track cumulative output sizes and file counts for benchmarks.
+        """
+        if io_stats is None:
+            return
+
+        self.total_data_bytes += io_stats.get('data_bytes', 0)
+        self.total_log_bytes += io_stats.get('log_bytes', 0)
+        self.total_seed_bytes += io_stats.get('seed_bytes', 0)
+        self.total_output_bytes += io_stats.get('total_bytes', 0)
+        self.total_output_files += io_stats.get('files_written', 0)
+
+    def initialize(self, seed=None, project_dir=None) -> None:
         """
         Initialize world and organisms in the universe, from either saved
         datasets or from parameter files (and subsequently writing the
@@ -169,9 +249,17 @@ class Universe(object):
             self.run_data_dir.mkdir(parents=True, exist_ok=True)
             self.run_logs_dir = self.project_dir / 'logs' / f'{datestring}-s{self.initial_seed}'
             self.run_logs_dir.mkdir(parents=True, exist_ok=True)
-            dio.save_universe(self)
+            io_stats = dio.save_universe(
+                self,
+                save_data=True,
+                save_log=True,
+                save_seed=True,
+                compact_json=self.compact_json_output
+            )
+            self._update_output_stats(io_stats)
+            self._prune_checkpoints()
 
-    def step(self):
+    def step(self) -> None:
         """
         Steps through one time step, iterating over all organisms and
         computing new organism states. Saves all organisms and the world
@@ -179,6 +267,7 @@ class Universe(object):
         """
         # Increment time step
         self.current_time += 1
+        step_start = time.perf_counter()
 
         # This is just updating the age, not evaluating whether an organism
         # is at death, since organism actions should be evaluated based on
@@ -211,11 +300,45 @@ class Universe(object):
         # Potential changes to the world would go here
         self.world.step()
 
+        compute_elapsed = time.perf_counter() - step_start
+        self.last_step_compute_time = compute_elapsed
+        self.step_count += 1
+        self.total_compute_time += compute_elapsed
+
         # Save universe state
+        # Always write terminal state so runs have a complete final snapshot/log.
+        is_terminal_step = (self.current_time == self.end_time)
+        write_snapshot = self._should_write_snapshot() or is_terminal_step
+        write_log = self._should_write_log() or is_terminal_step
+        if write_snapshot or write_log:
+            io_stats = dio.save_universe(
+                self,
+                save_data=write_snapshot,
+                save_log=write_log,
+                save_seed=write_snapshot,
+                compact_json=self.compact_json_output
+            )
+            if write_snapshot:
+                self._prune_checkpoints()
+        else:
+            io_stats = {
+                'data_bytes': 0,
+                'log_bytes': 0,
+                'seed_bytes': 0,
+                'total_bytes': 0,
+                'files_written': 0,
+                'write_time_s': 0.0
+            }
+        write_elapsed = io_stats.get('write_time_s', 0.0)
+        total_elapsed = compute_elapsed + write_elapsed
+
+        self.last_step_write_time = write_elapsed
+        self.elapsed_time = total_elapsed
+        self.total_write_time += write_elapsed
+        self._update_output_stats(io_stats)
+
         now = time.time()
-        self.elapsed_time = now - self.last_timestamp
         self.last_timestamp = now
-        dio.save_universe(self)
 
     def current_info(self, verbosity=1, expanded=True):
         total_num = sum([self.population_dict[species]['statistics']['total']
@@ -273,6 +396,24 @@ class Universe(object):
                     % (utils.time_to_string(self.elapsed_time),
                        utils.time_to_string(start_time_diff))
                 )
+        if verbosity >= 5:
+            if expanded:
+                pstring += (
+                    '    Step compute time: %.3f ms\n'
+                    % (1000 * self.last_step_compute_time)
+                    + '    Step write time: %.3f ms\n'
+                    % (1000 * self.last_step_write_time)
+                    + '    Total output written: %.2f MB (%d files)\n'
+                    % (self.total_output_bytes / (1024 ** 2),
+                       self.total_output_files)
+                )
+            else:
+                pstring += (
+                    ' [compute=%.3fms, write=%.3fms, output=%.2fMB]'
+                    % (1000 * self.last_step_compute_time,
+                       1000 * self.last_step_write_time,
+                       self.total_output_bytes / (1024 ** 2))
+                )
 
         return pstring
 
@@ -299,7 +440,38 @@ class Universe(object):
               help='Level of progress detail to print')
 @click.option('-s', '--seed', type=int,
               help='Random seed')
-def run_universe(timesteps=1000, organism_limit=None, restart=False, verbosity=4, seed=None):
+@click.option('--snapshot_interval', type=int,
+              help='Save full data snapshots every N timesteps')
+@click.option('--log_interval', type=int,
+              help='Save log files every N timesteps')
+@click.option('--retain_last_checkpoints', type=int,
+              help='Keep only the most recent N data checkpoints')
+@click.option('--compact_json_output', is_flag=True, default=False,
+              help='Write compact JSON output (smaller, faster writes)')
+def run_universe(
+    timesteps: int = 1000,
+    organism_limit: int | None = None,
+    restart: bool = False,
+    verbosity: int = 4,
+    seed: int | None = None,
+    snapshot_interval: int | None = None,
+    log_interval: int | None = None,
+    retain_last_checkpoints: int | None = None,
+    compact_json_output: bool = False
+) -> None:
+    """Run a simulation from a project directory configuration file.
+
+    Args:
+        timesteps: Maximum timestep to simulate.
+        organism_limit: Optional organism-count safety limit.
+        restart: Reserved flag for legacy restart behavior.
+        verbosity: Level of console output detail.
+        seed: Optional random seed override.
+        snapshot_interval: Optional snapshot cadence override.
+        log_interval: Optional log cadence override.
+        retain_last_checkpoints: Optional retained checkpoint count.
+        compact_json_output: Whether to write compact JSON output.
+    """
     project_dir = Path('.').resolve()
 
     # logs_path = project_dir / 'logs'
@@ -333,12 +505,23 @@ def run_universe(timesteps=1000, organism_limit=None, restart=False, verbosity=4
             cfg = yaml.load(f, Loader=yaml.FullLoader)
         timesteps = cfg.get('timesteps', timesteps)
         organism_limit = cfg.get('organism_limit', organism_limit)
+        snapshot_interval = cfg.get('snapshot_interval', snapshot_interval)
+        log_interval = cfg.get('log_interval', log_interval)
+        retain_last_checkpoints = cfg.get(
+            'retain_last_checkpoints',
+            retain_last_checkpoints
+        )
+        compact_json_output = cfg.get('compact_json_output', compact_json_output)
 
         universe = Universe(config_fn=config_path, 
                             project_dir=project_dir,
                             end_time=timesteps, 
                             seed=seed,
-                            organism_limit=organism_limit)
+                            organism_limit=organism_limit,
+                            snapshot_interval=snapshot_interval,
+                            log_interval=log_interval,
+                            retain_last_checkpoints=retain_last_checkpoints,
+                            compact_json_output=compact_json_output)
         universe.run(verbosity=verbosity, expanded=False)
         return
     elif len(config_path) == 0:

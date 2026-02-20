@@ -13,6 +13,7 @@ from . import utils
 from . import dataset_io as dio
 from . import parameter_io as pio
 from . import population_funcs as pf
+from . import invariants
 
 
 class Universe(object):
@@ -139,12 +140,16 @@ class Universe(object):
             allow_none=True
         )
         self.compact_json_output = bool(kwargs.get('compact_json_output', False))
+        self.validate_invariants = bool(kwargs.get('validate_invariants', False))
 
         self.initialize(seed=seed, project_dir=project_dir)
         self.organisms = pf.get_organism_list(self.population_dict)
         self.organisms_by_location = pf.hash_by_location(self.organisms)
         self.species_names = sorted(list(self.population_dict.keys()))
         self.intent_list = []
+
+        if self.validate_invariants:
+            invariants.assert_step_invariants(self)
 
         self.organism_limit = kwargs.get('organism_limit')
 
@@ -300,6 +305,9 @@ class Universe(object):
         # Potential changes to the world would go here
         self.world.step()
 
+        if self.validate_invariants:
+            invariants.assert_step_invariants(self)
+
         compute_elapsed = time.perf_counter() - step_start
         self.last_step_compute_time = compute_elapsed
         self.step_count += 1
@@ -448,6 +456,8 @@ class Universe(object):
               help='Keep only the most recent N data checkpoints')
 @click.option('--compact_json_output', is_flag=True, default=False,
               help='Write compact JSON output (smaller, faster writes)')
+@click.option('--validate-invariants', is_flag=True, default=False,
+              help='Validate timestep invariants on every step')
 def run_universe(
     timesteps: int = 1000,
     organism_limit: int | None = None,
@@ -457,7 +467,8 @@ def run_universe(
     snapshot_interval: int | None = None,
     log_interval: int | None = None,
     retain_last_checkpoints: int | None = None,
-    compact_json_output: bool = False
+    compact_json_output: bool = False,
+    validate_invariants: bool = False
 ) -> None:
     """Run a simulation from a project directory configuration file.
 
@@ -471,6 +482,7 @@ def run_universe(
         log_interval: Optional log cadence override.
         retain_last_checkpoints: Optional retained checkpoint count.
         compact_json_output: Whether to write compact JSON output.
+        validate_invariants: Whether to validate invariants every step.
     """
     project_dir = Path('.').resolve()
 
@@ -512,6 +524,7 @@ def run_universe(
             retain_last_checkpoints
         )
         compact_json_output = cfg.get('compact_json_output', compact_json_output)
+        validate_invariants = cfg.get('validate_invariants', validate_invariants)
 
         universe = Universe(config_fn=config_path, 
                             project_dir=project_dir,
@@ -521,7 +534,8 @@ def run_universe(
                             snapshot_interval=snapshot_interval,
                             log_interval=log_interval,
                             retain_last_checkpoints=retain_last_checkpoints,
-                            compact_json_output=compact_json_output)
+                            compact_json_output=compact_json_output,
+                            validate_invariants=validate_invariants)
         universe.run(verbosity=verbosity, expanded=False)
         return
     elif len(config_path) == 0:

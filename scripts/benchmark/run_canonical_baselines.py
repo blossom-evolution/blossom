@@ -38,6 +38,7 @@ class OutputSettings:
     log_interval: int = 1
     retain_last_checkpoints: int | None = None
     compact_json_output: bool = False
+    validate_invariants: bool = False
 
 
 SCENARIOS = {
@@ -117,7 +118,8 @@ def build_config(
         'timesteps': scenario.timesteps,
         'snapshot_interval': output_settings.snapshot_interval,
         'log_interval': output_settings.log_interval,
-        'compact_json_output': output_settings.compact_json_output
+        'compact_json_output': output_settings.compact_json_output,
+        'validate_invariants': output_settings.validate_invariants
     }
     if output_settings.retain_last_checkpoints is not None:
         config['retain_last_checkpoints'] = output_settings.retain_last_checkpoints
@@ -144,7 +146,8 @@ def run_once(
         snapshot_interval=output_settings.snapshot_interval,
         log_interval=output_settings.log_interval,
         retain_last_checkpoints=output_settings.retain_last_checkpoints,
-        compact_json_output=output_settings.compact_json_output
+        compact_json_output=output_settings.compact_json_output,
+        validate_invariants=output_settings.validate_invariants
     )
     while universe.current_time < universe.end_time:
         universe.step()
@@ -192,7 +195,8 @@ def aggregate(
             'snapshot_interval': output_settings.snapshot_interval,
             'log_interval': output_settings.log_interval,
             'retain_last_checkpoints': output_settings.retain_last_checkpoints,
-            'compact_json_output': output_settings.compact_json_output
+            'compact_json_output': output_settings.compact_json_output,
+            'validate_invariants': output_settings.validate_invariants
         }
     }
 
@@ -204,6 +208,7 @@ def output_profile_label(output_settings: dict[str, Any]) -> str:
         and output_settings['log_interval'] == 1
         and output_settings['retain_last_checkpoints'] is None
         and not output_settings['compact_json_output']
+        and not output_settings.get('validate_invariants', False)
     ):
         return 'canonical baseline'
     return 'output controls enabled'
@@ -218,6 +223,7 @@ def to_benchmarks_row(record: dict[str, Any], commit_short: str) -> str:
         f"log={record['output_settings']['log_interval']}, "
         f"retain={record['output_settings']['retain_last_checkpoints']}, "
         f"compact={record['output_settings']['compact_json_output']}, "
+        f"validate={record['output_settings'].get('validate_invariants', False)}, "
         f"tps range={record['timesteps_per_sec_min']:.3f}-{record['timesteps_per_sec_max']:.3f}"
     )
     return (
@@ -254,6 +260,8 @@ def main() -> None:
                         help='Keep only the latest N checkpoints')
     parser.add_argument('--compact-json-output', action='store_true',
                         help='Write compact JSON snapshots/logs')
+    parser.add_argument('--validate-invariants', action='store_true',
+                        help='Validate invariants each timestep (debug mode)')
     args = parser.parse_args()
 
     if args.repeats < 1:
@@ -277,7 +285,8 @@ def main() -> None:
         snapshot_interval=args.snapshot_interval,
         log_interval=args.log_interval,
         retain_last_checkpoints=args.retain_last_checkpoints,
-        compact_json_output=args.compact_json_output
+        compact_json_output=args.compact_json_output,
+        validate_invariants=args.validate_invariants
     )
     commit_short = subprocess.check_output(
         ['git', '-C', str(Path(__file__).resolve().parents[2]), 'rev-parse', '--short', 'HEAD'],
@@ -316,7 +325,8 @@ def main() -> None:
             'snapshot_interval': output_settings.snapshot_interval,
             'log_interval': output_settings.log_interval,
             'retain_last_checkpoints': output_settings.retain_last_checkpoints,
-            'compact_json_output': output_settings.compact_json_output
+            'compact_json_output': output_settings.compact_json_output,
+            'validate_invariants': output_settings.validate_invariants
         },
         'records': scenario_records,
         'runs': all_runs

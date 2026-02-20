@@ -144,6 +144,24 @@ Artifacts:
 - `blossom/planning/results/2026-02-20-canonical-baselines-full/canonical_baseline_results.json`
 - `blossom/planning/results/2026-02-20-output-controls-full/canonical_baseline_results.json`
 
+Phase 2 native-intent smoke (single repeat, seed 921):
+
+| Date | Commit | Scenario | Change | total_runtime_s | timesteps_per_sec | mean_step_compute_ms | mean_step_write_ms | data_written_mb | files_created | peak_run_disk_mb | Notes |
+|------|--------|----------|--------|----------------:|------------------:|---------------------:|-------------------:|----------------:|--------------:|-----------------:|-------|
+| 2026-02-20 | ff975fe | A | output controls enabled | 0.902370 | 554.096382 | 1.576245 | 0.228496 | 0.370864 | 61 | 0.397553 | n=1, seed=921, snapshot=10, log=10, retain=5, compact=True, validate=False |
+| 2026-02-20 | ff975fe | B | output controls enabled | 9.538821 | 26.208690 | 34.813639 | 3.341645 | 7.305583 | 36 | 7.320387 | n=1, seed=921, snapshot=10, log=10, retain=5, compact=True, validate=False |
+| 2026-02-20 | ff975fe | C | output controls enabled | 12.094985 | 4.960734 | 185.752976 | 15.830112 | 36.471949 | 17 | 36.477533 | n=1, seed=921, snapshot=10, log=10, retain=5, compact=True, validate=False |
+
+Correctness harness smoke:
+
+- Invariant-enabled deterministic A-run equivalence passed:
+  - left/right same seed (`911`) with `validate_invariants=true`
+  - `verify_equivalence.py` reported:
+    - `per_step_equal=true`
+    - `final_state_equal=true`
+    - `final_species_stats_equal=true`
+    - `final_outcomes_equal=true`
+
 ## 8) Acceptance Gates by Phase
 
 ## Gate for Phase 1 (I/O optimization)
@@ -179,4 +197,10 @@ Run canonical baseline scenarios:
 
 ```bash
 python scripts/benchmark/run_canonical_baselines.py --scenario all --repeats 3 --seed-base 300
+```
+
+Verify run equivalence (state hashes + final outcomes):
+
+```bash
+python scripts/benchmark/verify_equivalence.py --left-project PATH_A --right-project PATH_B --require-all-steps
 ```

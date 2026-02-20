@@ -143,8 +143,7 @@ Approach:
 
 ## 7) Immediate Next Steps
 
-1. Implement Phase 0 instrumentation.
-2. Collect baseline metrics for canonical scenarios.
-3. Implement Phase 1 output controls and compact writes.
-4. Re-benchmark and decide whether next effort goes to I/O or CPU hotspots.
-
+1. Execute Phase 2 Stage 2.0 from `planning/PHASE2_CORRECTNESS_PLAN.md`.
+2. Add step-level invariant checks and seeded equivalence harness.
+3. Validate one custom-behavior regression scenario (predator-prey style).
+4. Begin low-risk compute optimizations only after correctness gates are green.

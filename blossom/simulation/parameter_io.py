@@ -9,6 +9,7 @@ import yaml
 import json
 import numpy as np
 import copy
+from pathlib import Path
 
 from .utils import cast_to_list
 from .world import World
@@ -492,6 +493,32 @@ def parse_config_number(x):
     return x
 
 
+def resolve_linked_modules(paths, config_path):
+    """
+    Resolve linked module paths relative to a config file.
+
+    Parameters
+    ----------
+    paths : list of str
+        Linked module paths from the config.
+    config_path : str or Path
+        Path to the config file.
+
+    Returns
+    -------
+    resolved_paths : list of str
+        Absolute linked module paths.
+    """
+    config_dir = Path(config_path).resolve().parent
+    resolved_paths = []
+    for path in paths or []:
+        module_path = Path(path)
+        if not module_path.is_absolute():
+            module_path = (config_dir / module_path).resolve()
+        resolved_paths.append(str(module_path))
+    return resolved_paths
+
+
 def load_from_config(fn, seed=None):
     """
     Create initial population and world from .yml configuration file.
@@ -538,11 +565,15 @@ def load_from_config(fn, seed=None):
     species_cfgs = cfg['species']
     species_init_dicts=[]
     for species_cfg in species_cfgs:
+        linked_modules = resolve_linked_modules(
+            paths=species_cfg.get('linked_modules', []),
+            config_path=fn
+        )
         species_init_dict = {
             'population_size': species_cfg['population'],
             'species_name': species_cfg['name'],
             'max_age': parse_config_number(species_cfg['max_age']),
-            'custom_module_fns': species_cfg['linked_modules']
+            'custom_module_fns': linked_modules
         }
         # Action
         action = species_cfg['action']

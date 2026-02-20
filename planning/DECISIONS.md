@@ -100,6 +100,59 @@ Consequences:
 - Slower path to advanced biology features.
 - Cleaner architecture and lower regression risk.
 
+## ADR-006: Correctness-Gated Runtime Refactors
+
+- Date: 2026-02-20
+- Status: Accepted
+
+Context:
+
+- Performance work in the timestep loop can silently change simulation semantics.
+- `parse_intent` is the core consistency mechanism and must remain trustworthy.
+- Cloning/rebuild refactors are high-risk without explicit equivalence checks.
+
+Decision:
+
+- Require correctness gates before and after each runtime optimization:
+  - step invariants
+  - seeded equivalence (baseline + custom callbacks)
+  - resume equivalence
+- Keep object-based intent semantics as the default compatibility path.
+- Use staged optimization rollout defined in `planning/PHASE2_CORRECTNESS_PLAN.md`.
+
+Consequences:
+
+- Slower but safer optimization cadence.
+- Higher confidence that performance changes preserve model behavior.
+
+## ADR-007: Native Intent API with Legacy Compatibility
+
+- Date: 2026-02-20
+- Status: Accepted
+
+Context:
+
+- Custom behavior must stay flexible while preventing accidental mutation of
+  global timestep state before conflict resolution.
+- We needed a direct engine-level intent path rather than sample-local bridges.
+
+Decision:
+
+- Add core intent API (`FieldChange`, `UpdateIntent`, `SpawnIntent`,
+  `CompositeIntent`) in `blossom.simulation.intent_api`.
+- Make read-only callback inputs (`OrganismView`, `BehaviorContext`) the
+  default callback contract.
+- Keep legacy `(Organism, Universe)` callbacks behind explicit
+  `@legacy_behavior` marker.
+- Normalize callback outputs in core runtime so custom methods can return
+  either legacy organism objects or native `CompositeIntent`.
+
+Consequences:
+
+- Existing custom callbacks continue to run.
+- New callbacks can be explicit/auditable without local bridge code.
+- `parse_intent` conflict policy remains unchanged.
+
 ## Decision Template
 
 Use this for new entries:
@@ -119,4 +172,3 @@ Decision:
 Consequences:
 - ...
 ```
-

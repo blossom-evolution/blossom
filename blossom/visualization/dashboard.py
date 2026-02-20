@@ -11,8 +11,46 @@ colors = plotly.colors.DEFAULT_PLOTLY_COLORS
 from pathlib import Path
 import json 
 import humanfriendly
+from typing import Any
 
 from .parsing import read_log
+
+
+def _as_float(value: Any) -> float | None:
+    """Convert numeric-like values to float; return None if unavailable."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
+def _extract_running_metrics(log_dict: dict[str, Any]) -> tuple[float | None, float | None]:
+    """Extract cumulative elapsed-time and output-size metrics from a log entry."""
+    performance = log_dict.get('performance', {})
+    running_compute = _as_float(performance.get('running_compute_time'))
+    running_write = _as_float(performance.get('running_write_time'))
+    running_output_bytes = _as_float(performance.get('running_output_bytes'))
+
+    elapsed_time = None
+    if running_compute is not None and running_write is not None:
+        elapsed_time = running_compute + running_write
+
+    return elapsed_time, running_output_bytes
+
+
+def _safe_species_ratio(
+    species_stats: dict[str, dict[str, int]],
+    denominator_species: str,
+    numerator_species: str,
+) -> float | None:
+    """Safely compute alive-ratio with extinction handling.
+
+    Returns ``None`` when denominator alive-count is zero so Plotly can skip
+    that point rather than crashing the dashboard callback.
+    """
+    denominator = species_stats[denominator_species]["alive"]
+    if denominator == 0:
+        return None
+    return species_stats[numerator_species]["alive"] / denominator
 
 
 @click.command()
@@ -120,6 +158,7 @@ def dashboard(track_dir, port=8888):
         Input('elapsed-store', 'data')
     )
     def update_elapsed_label(elapsed_time):
+        elapsed_time = elapsed_time or 0
         return humanfriendly.format_timespan(elapsed_time)
     
     @callback(
@@ -127,6 +166,7 @@ def dashboard(track_dir, port=8888):
         Input('size-store', 'data')
     )
     def update_size_label(size):
+        size = size or 0
         return humanfriendly.format_size(size)
 
     @callback(
@@ -209,6 +249,8 @@ def dashboard(track_dir, port=8888):
         run_dir = track_dir / 'logs' / run_name
 
         dataset_fns = dataset_fns or {'analyzed_fns': []}
+        elapsed_time = elapsed_time or 0
+        size = size or 0
 
         all_fns = [str(x) for x in Path(run_dir).glob('*.log')]
         fns = sorted(set(all_fns) - set(dataset_fns['analyzed_fns']))
@@ -219,15 +261,41 @@ def dashboard(track_dir, port=8888):
 
         x = []
         y = []
+        latest_running_elapsed = None
+        latest_running_size = None
         for fn in fns:
             log_dict = read_log(fn)
             x.append(log_dict['world']['timestep'])
             y.append(log_dict['species'])
-            elapsed_time += log_dict['world']['elapsed_time']
-            size += log_dict['info']['size']
+            running_elapsed, running_size = _extract_running_metrics(log_dict)
+            if running_elapsed is not None:
+                latest_running_elapsed = running_elapsed
+            else:
+                # Backward compatibility for logs written before running metrics.
+                elapsed_time += log_dict['world']['elapsed_time']
+            if running_size is not None:
+                latest_running_size = running_size
+            else:
+                # Backward compatibility for logs written before running metrics.
+                size += log_dict['info']['size']
+
+        if latest_running_elapsed is not None:
+            elapsed_time = latest_running_elapsed
+        if latest_running_size is not None:
+            size = latest_running_size
         y_alive = {s: [d[s]['alive'] for d in y] for s in species}
         y_dead = {s: [d[s]['dead'] for d in y] for s in species}
-        y_ratio = [d[species[1]]['alive']/d[species[0]]['alive'] for d in y]
+        if len(species) >= 2:
+            y_ratio = [
+                _safe_species_ratio(
+                    species_stats=d,
+                    denominator_species=species[0],
+                    numerator_species=species[1],
+                )
+                for d in y
+            ]
+        else:
+            y_ratio = [None for _ in y]
 
         extendData = [
             {

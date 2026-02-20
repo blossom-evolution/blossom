@@ -2,9 +2,13 @@ import uuid
 import copy
 import sys
 import importlib.util
+import os
+from types import ModuleType
+from typing import Any, Callable
 import numpy as np
 
 from . import default_fields
+from . import intent_api
 from .utils import cast_to_list
 from .organism_behavior import movement, reproduction, drinking, eating, action
 
@@ -13,18 +17,38 @@ class Organism(object):
     """
     A basic organism structure for all species.
     """
+    _CUSTOM_MODULE_CACHE: dict[tuple[str, int], ModuleType] = {}
 
     @staticmethod
-    def _load_custom_module(path, module_idx):
+    def _load_custom_module(path: str) -> ModuleType:
         """
         Load a custom behavior module from a file path.
         """
-        module_name = f'blossom_custom_{module_idx}_{uuid.uuid4().hex}'
-        spec = importlib.util.spec_from_file_location(module_name, path)
+        module_path = os.path.abspath(path)
+        if not os.path.isfile(module_path):
+            raise FileNotFoundError(f'Custom module does not exist: {module_path}')
+
+        mtime_ns = os.stat(module_path).st_mtime_ns
+        cache_key = (module_path, mtime_ns)
+        if cache_key in Organism._CUSTOM_MODULE_CACHE:
+            return Organism._CUSTOM_MODULE_CACHE[cache_key]
+
+        # Drop stale entries for this path when file has changed.
+        stale_keys = [
+            key
+            for key in Organism._CUSTOM_MODULE_CACHE.keys()
+            if key[0] == module_path and key != cache_key
+        ]
+        for key in stale_keys:
+            del Organism._CUSTOM_MODULE_CACHE[key]
+
+        module_name = f'blossom_custom_{uuid.uuid4().hex}'
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
         if spec is None or spec.loader is None:
-            raise ImportError(f'Could not load custom module from path: {path}')
+            raise ImportError(f'Could not load custom module from path: {module_path}')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        Organism._CUSTOM_MODULE_CACHE[cache_key] = module
         return module
 
     def __init__(self, init_dict={}, seed=None):
@@ -57,8 +81,8 @@ class Organism(object):
         # Import custom modules / paths
         if self.custom_module_fns is not None:
             self._custom_modules = []
-            for i, path in enumerate(cast_to_list(self.custom_module_fns)):
-                temp_module = self._load_custom_module(path, i)
+            for path in cast_to_list(self.custom_module_fns):
+                temp_module = self._load_custom_module(path)
                 self._custom_modules.append(temp_module)
 
     def to_dict(self):
@@ -174,6 +198,47 @@ class Organism(object):
         setattr(updated_organism, parameter, attribute)
         return updated_organism
 
+    def _invoke_custom_callback(self, callback: Callable[..., Any], universe: Any) -> Any:
+        """
+        Invoke a custom callback in legacy or intent mode.
+        """
+        return intent_api.invoke_behavior_callback(
+            callback=callback,
+            actor=self,
+            universe=universe
+        )
+
+    def _normalize_behavior_output(self, output: Any, universe: Any) -> list["Organism"]:
+        """
+        Normalize callback output into a concrete organism list.
+        """
+        return intent_api.normalize_effect_output(
+            output=output,
+            actor=self,
+            universe=universe
+        )
+
+    def _run_behavior_method(self, method_name: str | None, builtin_module: Any, universe: Any) -> list["Organism"]:
+        """
+        Resolve and execute a behavior callback by name.
+
+        Search order:
+        1) custom modules (if linked)
+        2) built-in behavior module
+        """
+        if method_name is None:
+            raise ValueError('No method type defined!')
+
+        if self.custom_module_fns is not None:
+            for custom_module in self._custom_modules:
+                if hasattr(custom_module, method_name):
+                    callback = getattr(custom_module, method_name)
+                    output = self._invoke_custom_callback(callback, universe)
+                    return self._normalize_behavior_output(output, universe)
+
+        output = getattr(builtin_module, method_name)(self, universe)
+        return self._normalize_behavior_output(output, universe)
+
     def move(self, universe):
         """
         Method for handling movement. Searches through custom methods and
@@ -190,18 +255,10 @@ class Organism(object):
             Organism or list of organisms affected by this organism's movement.
         """
         try:
-            if self.movement_type is None:
-                raise ValueError('No movement type defined!')
-            elif self.custom_module_fns is not None:
-                for custom_module in self._custom_modules:
-                    if hasattr(custom_module, self.movement_type):
-                        return getattr(custom_module, self.movement_type)(
-                            self,
-                            universe
-                        )
-            return getattr(movement, self.movement_type)(
-                self,
-                universe
+            return self._run_behavior_method(
+                method_name=self.movement_type,
+                builtin_module=movement,
+                universe=universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -230,18 +287,10 @@ class Organism(object):
 
         """
         try:
-            if self.reproduction_type is None:
-                raise ValueError('No reproduction type defined!')
-            elif self.custom_module_fns is not None:
-                for custom_module in self._custom_modules:
-                    if hasattr(custom_module, self.reproduction_type):
-                        return getattr(custom_module, self.reproduction_type)(
-                            self,
-                            universe
-                        )
-            return getattr(reproduction, self.reproduction_type)(
-                self,
-                universe
+            return self._run_behavior_method(
+                method_name=self.reproduction_type,
+                builtin_module=reproduction,
+                universe=universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -268,18 +317,10 @@ class Organism(object):
 
         """
         try:
-            if self.drinking_type is None:
-                raise ValueError('No drinking type defined!')
-            elif self.custom_module_fns is not None:
-                for custom_module in self._custom_modules:
-                    if hasattr(custom_module, self.drinking_type):
-                        return getattr(custom_module, self.drinking_type)(
-                            self,
-                            universe
-                        )
-            return getattr(drinking, self.drinking_type)(
-                self,
-                universe
+            return self._run_behavior_method(
+                method_name=self.drinking_type,
+                builtin_module=drinking,
+                universe=universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -306,18 +347,10 @@ class Organism(object):
 
         """
         try:
-            if self.eating_type is None:
-                raise ValueError('No eating type defined!')
-            elif self.custom_module_fns is not None:
-                for custom_module in self._custom_modules:
-                    if hasattr(custom_module, self.eating_type):
-                        return getattr(custom_module, self.eating_type)(
-                            self,
-                            universe
-                        )
-            return getattr(eating, self.eating_type)(
-                self,
-                universe
+            return self._run_behavior_method(
+                method_name=self.eating_type,
+                builtin_module=eating,
+                universe=universe
             )
         except AttributeError as e:
             raise AttributeError(
@@ -347,17 +380,19 @@ class Organism(object):
             Organism or list of organisms affected by this organism's action.
 
         """
-        action_name = None
+        action_result = None
         try:
             if self.custom_module_fns is not None:
                 for custom_module in self._custom_modules:
                     if hasattr(custom_module, self.action_type):
-                        action_name = getattr(custom_module, self.action_type)(
-                            self,
-                            universe
+                        callback = getattr(custom_module, self.action_type)
+                        action_result = self._invoke_custom_callback(
+                            callback=callback,
+                            universe=universe
                         )
-            if action_name is None:
-                action_name = getattr(action, self.action_type)(
+                        break
+            if action_result is None:
+                action_result = getattr(action, self.action_type)(
                     self,
                     universe
                 )
@@ -369,11 +404,18 @@ class Organism(object):
                 + 'method is written correctly.'
             ).with_traceback(sys.exc_info()[2])
 
-        self.last_action = action_name
-
-        affected_organisms = cast_to_list(getattr(self, action_name)(
-            universe
-        ))
+        if isinstance(action_result, str):
+            self.last_action = action_result
+            affected_organisms = self._normalize_behavior_output(
+                output=getattr(self, action_result)(universe),
+                universe=universe
+            )
+        else:
+            self.last_action = self.action_type
+            affected_organisms = self._normalize_behavior_output(
+                output=action_result,
+                universe=universe
+            )
 
         # Ensure this organism is included in affected_organisms
         already_included = False

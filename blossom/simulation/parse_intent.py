@@ -35,10 +35,10 @@ def parse(intent_list, organism_list, seed=None):
     # TODO: Figure out exactly how this should be controlled -- on the scale of
     # the universe, the world, or the organisms itself
     updated_list = []
-
-    id_org_dict = {}
-    for organism in organism_list:
-        id_org_dict[organism.organism_id] = organism
+    id_org_dict = {
+        organism.organism_id: organism
+        for organism in organism_list
+    }
 
     new_organism_ids = set()
 
@@ -47,15 +47,14 @@ def parse(intent_list, organism_list, seed=None):
     # preserved)
     rng.shuffle(intent_list)
     for organism_set in intent_list:
-        set_ids = set(organism.organism_id for organism in organism_set)
-        if len(new_organism_ids & set_ids) == 0:
+        set_ids = {organism.organism_id for organism in organism_set}
+        if new_organism_ids.isdisjoint(set_ids):
             updated_list.extend(organism_set)
             new_organism_ids.update(set_ids)
 
     # Add back organisms whose steps were not chosen (and increment status)
-    for id in id_org_dict.keys():
-        if id not in new_organism_ids:
-            organism = id_org_dict[id]
+    for organism_id, organism in id_org_dict.items():
+        if organism_id not in new_organism_ids:
             if organism.alive:
                 updated_list.append(organism.step_without_acting())
 

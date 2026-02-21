@@ -162,6 +162,29 @@ Correctness harness smoke:
     - `final_species_stats_equal=true`
     - `final_outcomes_equal=true`
 
+Phase 2.1 clone/dispatch optimization smoke (single repeat, seed 921):
+
+| Date | Commit | Scenario | Change | total_runtime_s | timesteps_per_sec | mean_step_compute_ms | mean_step_write_ms | data_written_mb | files_created | peak_run_disk_mb | Notes |
+|------|--------|----------|--------|----------------:|------------------:|---------------------:|-------------------:|----------------:|--------------:|-----------------:|-------|
+| 2026-02-20 | ff975fe | A | output controls enabled | 0.902370 | 554.096382 | 1.576245 | 0.228496 | 0.370864 | 61 | 0.397553 | pre-optimization reference |
+| 2026-02-20 | ff975fe | B | output controls enabled | 9.538821 | 26.208690 | 34.813639 | 3.341645 | 7.305583 | 36 | 7.320387 | pre-optimization reference |
+| 2026-02-20 | ff975fe | C | output controls enabled | 12.094985 | 4.960734 | 185.752976 | 15.830112 | 36.471949 | 17 | 36.477533 | pre-optimization reference |
+| 2026-02-20 | 75ed295 | A | output controls enabled | 0.383416 | 1304.067468 | 0.560348 | 0.206483 | 0.370864 | 61 | 0.397634 | clone fast-path + dispatch micro-optimizations |
+| 2026-02-20 | 75ed295 | B | output controls enabled | 4.108714 | 60.846286 | 13.288121 | 3.146736 | 7.305583 | 36 | 7.320426 | clone fast-path + dispatch micro-optimizations |
+| 2026-02-20 | 75ed295 | C | output controls enabled | 6.096525 | 9.841671 | 86.203177 | 15.405581 | 36.471949 | 17 | 36.477544 | clone fast-path + dispatch micro-optimizations |
+
+Relative improvement (75ed295 vs ff975fe, same seed/output settings):
+
+- Scenario A: runtime `57.5%` faster, throughput `2.35x`.
+- Scenario B: runtime `56.9%` faster, throughput `2.32x`.
+- Scenario C: runtime `49.6%` faster, throughput `1.98x`.
+
+Profile evidence (Scenario B shape, fixed seed, profiled run):
+
+- Total profiled runtime: `31.55s -> 14.72s`.
+- `Organism.clone_self` cumulative time: `16.63s -> 2.01s`.
+- `parse_intent.parse` cumulative time: `0.61s -> 0.43s`.
+
 ## 8) Acceptance Gates by Phase
 
 ## Gate for Phase 1 (I/O optimization)

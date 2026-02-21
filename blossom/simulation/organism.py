@@ -18,6 +18,15 @@ class Organism(object):
     A basic organism structure for all species.
     """
     _CUSTOM_MODULE_CACHE: dict[tuple[str, int], ModuleType] = {}
+    _IMMUTABLE_SCALAR_TYPES: tuple[type, ...] = (
+        bool,
+        int,
+        float,
+        complex,
+        str,
+        bytes,
+        type(None),
+    )
 
     @staticmethod
     def _load_custom_module(path: str) -> ModuleType:
@@ -103,6 +112,43 @@ class Organism(object):
         return str(uuid.UUID(bytes=rng.bytes(16)))
 
     @classmethod
+    def _clone_attribute_value(cls, value: Any) -> Any:
+        """
+        Clone an organism attribute value with strong mutable-isolation rules.
+
+        Lists, dicts, sets, and tuples are recursively cloned so the cloned
+        organism never shares those containers with the source organism.
+        Module references are intentionally reused, since modules are loaded
+        code objects and not mutable simulation state.
+        """
+        if isinstance(value, ModuleType):
+            return value
+        if isinstance(value, cls._IMMUTABLE_SCALAR_TYPES):
+            return value
+        if isinstance(value, list):
+            return [cls._clone_attribute_value(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(cls._clone_attribute_value(item) for item in value)
+        if isinstance(value, dict):
+            return {
+                cls._clone_attribute_value(key): cls._clone_attribute_value(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, set):
+            return {cls._clone_attribute_value(item) for item in value}
+        if isinstance(value, frozenset):
+            return frozenset(cls._clone_attribute_value(item) for item in value)
+
+        try:
+            return copy.deepcopy(value)
+        except Exception as exc:
+            raise TypeError(
+                'Unable to clone organism attribute '
+                f'{value!r} (type={type(value).__name__}). '
+                'Custom attributes must be deepcopy-compatible.'
+            ) from exc
+
+    @classmethod
     def clone(cls, organism):
         """
         Makes a new Organism object identical to the current one.
@@ -117,10 +163,13 @@ class Organism(object):
         new_organism : Organism
             Copied organism.
         """
-        new_organism = cls(organism.to_dict())
-        # Use copy module to properly handle mutable lists
-        new_organism.ancestry = copy.copy(new_organism.ancestry)
-        new_organism.location = copy.copy(new_organism.location)
+        # Fast-path clone: bypass __init__ reconstruction and copy attributes
+        # directly while deeply isolating mutable simulation state.
+        new_organism = cls.__new__(cls)
+        new_organism.__dict__ = {
+            field_name: cls._clone_attribute_value(field_value)
+            for field_name, field_value in organism.__dict__.items()
+        }
         return new_organism
 
     def clone_self(self):
@@ -237,7 +286,11 @@ class Organism(object):
                     return self._normalize_behavior_output(output, universe)
 
         output = getattr(builtin_module, method_name)(self, universe)
-        return self._normalize_behavior_output(output, universe)
+        # Built-ins are engine-owned and expected to return organism objects.
+        # Keep this fast path to avoid repeated validation overhead.
+        if isinstance(output, (list, tuple)):
+            return list(output)
+        return [output]
 
     def move(self, universe):
         """
@@ -406,10 +459,7 @@ class Organism(object):
 
         if isinstance(action_result, str):
             self.last_action = action_result
-            affected_organisms = self._normalize_behavior_output(
-                output=getattr(self, action_result)(universe),
-                universe=universe
-            )
+            affected_organisms = cast_to_list(getattr(self, action_result)(universe))
         else:
             self.last_action = self.action_type
             affected_organisms = self._normalize_behavior_output(

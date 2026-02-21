@@ -12,6 +12,10 @@ Implementation status (2026-02-20):
   - `blossom/blossom/simulation/intent_api.py`
   - default `(org, ctx)` callback invocation + `@legacy_behavior` escape hatch
   - `CompositeIntent` runtime support in `Organism`
+- Stage 2.1 micro-optimizations started:
+  - fast-path `Organism.clone` (bypass `__init__` reconstruction)
+  - reduced builtin callback normalization overhead
+  - `parse_intent` loop micro-optimizations
 
 ## 1) Objective
 

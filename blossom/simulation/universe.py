@@ -147,6 +147,9 @@ class Universe(object):
         self.organisms_by_location = pf.hash_by_location(self.organisms)
         self.species_names = sorted(list(self.population_dict.keys()))
         self.intent_list = []
+        self._step_last_organisms = None
+        self._legacy_behavior_state_ready = False
+        self._behavior_context_shared = None
 
         if self.validate_invariants:
             invariants.assert_step_invariants(self)
@@ -205,6 +208,69 @@ class Universe(object):
         self.total_seed_bytes += io_stats.get('seed_bytes', 0)
         self.total_output_bytes += io_stats.get('total_bytes', 0)
         self.total_output_files += io_stats.get('files_written', 0)
+
+    def _ensure_legacy_behavior_state(self) -> None:
+        """
+        Materialize aged per-step state for legacy callbacks on demand.
+
+        Legacy callbacks receive the full ``universe`` object and may access
+        ``universe.organisms``, ``universe.population_dict``, or
+        ``universe.organisms_by_location``. Historically those were computed
+        from an aged clone snapshot before intent generation. To preserve that
+        behavior without paying the cost on every step, we build this snapshot
+        only when a legacy callback is actually invoked.
+        """
+        if self._legacy_behavior_state_ready:
+            return
+        if self._step_last_organisms is None:
+            return
+
+        self.organisms = [organism.clone_self()._update_age()
+                          for organism in self._step_last_organisms
+                          if organism.alive]
+        self.population_dict = pf.get_population_dict(self.organisms,
+                                                      self.species_names)
+        self.organisms_by_location = pf.hash_by_location(self.organisms)
+        self._legacy_behavior_state_ready = True
+
+    def _get_behavior_context_shared(self) -> dict[str, Any]:
+        """
+        Return per-step shared indexes used by intent-style callbacks.
+
+        This cache avoids rebuilding ``organism_id -> organism`` and query
+        indexes for every custom callback invocation in the same timestep.
+        """
+        if self._behavior_context_shared is not None:
+            return self._behavior_context_shared
+
+        step_source = self._step_last_organisms
+        if step_source is None:
+            step_source = self.organisms
+            age_offset = 0
+        else:
+            age_offset = 1
+
+        source_by_id: dict[str, Any] = {}
+        ids_by_location: dict[tuple[int, ...], list[str]] = {}
+        ids_by_species: dict[str, list[str]] = {}
+
+        for organism in step_source:
+            if age_offset == 1 and not organism.alive:
+                continue
+            organism_id = organism.organism_id
+            source_by_id[organism_id] = organism
+
+            location = tuple(organism.location)
+            ids_by_location.setdefault(location, []).append(organism_id)
+            ids_by_species.setdefault(organism.species_name, []).append(organism_id)
+
+        self._behavior_context_shared = {
+            "age_offset": age_offset,
+            "source_by_id": source_by_id,
+            "ids_by_location": ids_by_location,
+            "ids_by_species": ids_by_species,
+        }
+        return self._behavior_context_shared
 
     def initialize(self, seed=None, project_dir=None) -> None:
         """
@@ -279,25 +345,31 @@ class Universe(object):
         # the current state. Age needs to be updated so that every organism
         # in intent list has the correct age.
         last_organisms = self.organisms
-        self.organisms = [organism.clone_self()._update_age()
-                          for organism in last_organisms
-                          if organism.alive]
-        self.population_dict = pf.get_population_dict(self.organisms,
-                                                      self.species_names)
-        self.organisms_by_location = pf.hash_by_location(self.organisms)
+        self._step_last_organisms = last_organisms
+        self._legacy_behavior_state_ready = False
+        self._behavior_context_shared = None
 
         # intent_list is a list of lists, one list per organism in the current
         # time step
         self.intent_list = []
-        for organism in last_organisms:
-            if organism.alive:
-                # Use updated organism ages, and pass Universe to organism step
-                self.intent_list.append(organism.step(self))
+        try:
+            for organism in last_organisms:
+                if organism.alive:
+                    # Actor age updates still occur in organism.step. Other
+                    # organisms are exposed through BehaviorContext with a
+                    # lazy aged baseline for intent-style callbacks.
+                    self.intent_list.append(organism.step(self))
 
-        # Parse intent list and ensure it is valid
-        self.organisms = parse_intent.parse(self.intent_list, 
-                                            last_organisms, 
-                                            seed=self.rng)
+            # Parse intent list and ensure it is valid
+            self.organisms = parse_intent.parse(self.intent_list,
+                                                last_organisms,
+                                                seed=self.rng)
+        finally:
+            # Per-step context cache should never leak across timesteps.
+            self._step_last_organisms = None
+            self._legacy_behavior_state_ready = False
+            self._behavior_context_shared = None
+
         self.population_dict = pf.get_population_dict(self.organisms,
                                                       self.species_names)
         self.organisms_by_location = pf.hash_by_location(self.organisms)

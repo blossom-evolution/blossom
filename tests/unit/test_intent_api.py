@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from types import SimpleNamespace
 from typing import Any
 
@@ -25,6 +26,8 @@ from blossom.simulation.intent_api import (
 )
 from blossom.simulation.population_funcs import get_population_dict, hash_by_location
 from blossom.simulation.world import World
+
+_ORGANISM_SEED_COUNTER = itertools.count(123)
 
 
 def _make_universe(organisms: list[Organism], seed: int = 7) -> Any:
@@ -83,7 +86,7 @@ def _make_organism(
         init_dict["food_metabolism"] = 1
         init_dict["food_intake"] = 1
         init_dict["max_time_without_food"] = 99
-    return Organism(init_dict=init_dict, seed=123)
+    return Organism(init_dict=init_dict, seed=next(_ORGANISM_SEED_COUNTER))
 
 
 def test_unmarked_callback_uses_new_org_ctx_contract() -> None:
@@ -202,3 +205,45 @@ def test_normalize_effect_output_rejects_invalid_legacy_payload() -> None:
 
     with pytest.raises(TypeError):
         normalize_effect_output(output=[123], actor=actor, universe=universe)
+
+
+def test_behavior_context_uses_step_baseline_with_age_offset() -> None:
+    """Step contexts should expose age-incremented peers by default."""
+    actor_source = _make_organism(species_name="predator", location=[0])
+    peer_source = _make_organism(species_name="prey", location=[1])
+    actor_source.age = 4
+    peer_source.age = 9
+    actor = actor_source.clone_self()._update_age()
+
+    universe = _make_universe([actor_source, peer_source])
+    universe._step_last_organisms = [actor_source, peer_source]
+
+    context = BehaviorContext(universe=universe, actor=actor)
+    peer_view = context.get_organism(peer_source.organism_id)
+    actor_view = context.get_organism(actor.organism_id)
+
+    assert peer_view.age == peer_source.age + 1
+    assert actor_view.age == actor.age
+
+
+def test_legacy_dispatch_invokes_universe_legacy_state_hook() -> None:
+    """Legacy callbacks should request universe legacy step materialization."""
+    actor = _make_organism(species_name="predator", location=[0])
+    universe = _make_universe([actor])
+    universe.called = False
+
+    def _hook() -> None:
+        universe.called = True
+
+    universe._ensure_legacy_behavior_state = _hook
+
+    @legacy_behavior
+    def callback(organism: Organism, local_universe: Any) -> str:
+        assert organism is actor
+        assert local_universe is universe
+        return "ok"
+
+    result = invoke_behavior_callback(callback=callback, actor=actor, universe=universe)
+
+    assert result == "ok"
+    assert universe.called is True

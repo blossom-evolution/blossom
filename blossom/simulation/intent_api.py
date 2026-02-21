@@ -180,25 +180,69 @@ class BehaviorContext:
         actor: Current acting organism object.
     """
 
-    def __init__(self, universe: Any, actor: Any) -> None:
+    def __init__(
+        self,
+        universe: Any,
+        actor: Any,
+        shared: dict[str, Any] | None = None,
+    ) -> None:
         self.rng = universe.rng
         self.world = WorldView(universe.world)
         self.time = universe.current_time
 
-        self._organisms_by_id: dict[str, Any] = {
-            organism.organism_id: organism
-            for organism in universe.organisms
-        }
-        # Ensure the actor reference exactly matches the currently stepping
-        # actor object.
-        self._organisms_by_id[actor.organism_id] = actor
+        if shared is None:
+            # Fallback for universe-like test stubs that do not provide the
+            # shared context cache helper.
+            step_source = getattr(universe, "_step_last_organisms", None)
+            if step_source is None:
+                step_source = universe.organisms
+                age_offset = 0
+            else:
+                age_offset = 1
 
-        self._organisms_by_location = universe.organisms_by_location
-        self._population_dict = universe.population_dict
+            source_by_id: dict[str, Any] = {}
+            ids_by_location: dict[tuple[int, ...], list[str]] = {}
+            ids_by_species: dict[str, list[str]] = {}
+            for organism in step_source:
+                if age_offset == 1 and not organism.alive:
+                    continue
+                organism_id = organism.organism_id
+                source_by_id[organism_id] = organism
+                location = tuple(organism.location)
+                ids_by_location.setdefault(location, []).append(organism_id)
+                ids_by_species.setdefault(organism.species_name, []).append(
+                    organism_id
+                )
+            shared = {
+                "age_offset": age_offset,
+                "source_by_id": source_by_id,
+                "ids_by_location": ids_by_location,
+                "ids_by_species": ids_by_species,
+            }
+
+        self._age_offset = shared["age_offset"]
+        self._source_by_id = shared["source_by_id"]
+        self._ids_by_location = shared["ids_by_location"]
+        self._ids_by_species = shared["ids_by_species"]
+        self._actor_id = actor.organism_id
+        self._actor = actor
+        self._baseline_cache: dict[str, Any] = {
+            self._actor_id: self._actor
+        }
 
     def _baseline(self, organism_id: str) -> Any:
         """Return the underlying organism object for internal use."""
-        return self._organisms_by_id[organism_id]
+        if organism_id == self._actor_id:
+            return self._actor
+        if organism_id in self._baseline_cache:
+            return self._baseline_cache[organism_id]
+
+        source = self._source_by_id[organism_id]
+        baseline = source.clone_self()
+        if self._age_offset == 1:
+            baseline = baseline._update_age()
+        self._baseline_cache[organism_id] = baseline
+        return baseline
 
     def view_for_id(self, organism_id: str) -> OrganismView:
         """Return a read-only organism view by organism ID."""
@@ -210,8 +254,9 @@ class BehaviorContext:
 
     def at_location(self, location: tuple[int, ...]) -> tuple[OrganismView, ...]:
         """Return read-only views for organisms at a location."""
-        organisms = self._organisms_by_location.get(tuple(location), [])
-        return tuple(OrganismView(organism) for organism in organisms)
+        organism_ids = self._ids_by_location.get(tuple(location), [])
+        return tuple(OrganismView(self._baseline(organism_id))
+                     for organism_id in organism_ids)
 
     def by_species(
         self,
@@ -224,13 +269,17 @@ class BehaviorContext:
             species_name: Species key in population dict.
             alive_only: Whether to include only alive organisms.
         """
-        species = self._population_dict.get(species_name)
-        if species is None:
+        organism_ids = self._ids_by_species.get(species_name, [])
+        if not organism_ids:
             return ()
-        organisms = species["organisms"]
         if alive_only:
-            organisms = [organism for organism in organisms if organism.alive]
-        return tuple(OrganismView(organism) for organism in organisms)
+            organism_ids = [
+                organism_id
+                for organism_id in organism_ids
+                if self._baseline(organism_id).alive
+            ]
+        return tuple(OrganismView(self._baseline(organism_id))
+                     for organism_id in organism_ids)
 
     def nearest(
         self,
@@ -256,8 +305,8 @@ class BehaviorContext:
         source = self._baseline(source_id)
         source_location = tuple(source.location)
 
-        candidates: list[tuple[int, str, Any]] = []
-        for organism_id, organism in self._organisms_by_id.items():
+        candidates: list[tuple[int, str]] = []
+        for organism_id, organism in self._source_by_id.items():
             if organism_id == source_id:
                 continue
             if alive_only and not organism.alive:
@@ -265,10 +314,11 @@ class BehaviorContext:
             if species is not None and organism.species_name != species:
                 continue
             distance = _manhattan(source_location, tuple(organism.location))
-            candidates.append((distance, organism_id, organism))
+            candidates.append((distance, organism_id))
 
         candidates.sort(key=lambda item: (item[0], item[1]))
-        return tuple(OrganismView(organism) for _, _, organism in candidates[:k])
+        return tuple(OrganismView(self._baseline(organism_id))
+                     for _, organism_id in candidates[:k])
 
 
 def invoke_behavior_callback(callback: Callable[..., Any], actor: Any, universe: Any) -> Any:
@@ -283,9 +333,14 @@ def invoke_behavior_callback(callback: Callable[..., Any], actor: Any, universe:
         Callback result.
     """
     if is_legacy_behavior(callback):
+        if hasattr(universe, "_ensure_legacy_behavior_state"):
+            universe._ensure_legacy_behavior_state()
         return callback(actor, universe)
 
-    context = BehaviorContext(universe=universe, actor=actor)
+    shared = None
+    if hasattr(universe, "_get_behavior_context_shared"):
+        shared = universe._get_behavior_context_shared()
+    context = BehaviorContext(universe=universe, actor=actor, shared=shared)
     return callback(OrganismView(actor), context)
 
 
